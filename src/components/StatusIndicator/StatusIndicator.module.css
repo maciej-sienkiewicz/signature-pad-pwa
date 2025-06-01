@@ -1,0 +1,53 @@
+.container {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-gray-50);
+    border-radius: var(--radius-full);
+}
+
+.indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-full);
+    transition: all var(--transition-base);
+}
+
+.indicator.connected {
+    background: var(--color-success);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 20%, transparent);
+}
+
+.indicator.disconnected {
+    background: var(--color-gray-400);
+}
+
+.indicator.error {
+    background: var(--color-error);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 20%, transparent);
+}
+
+.text {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--color-gray-700);
+}
