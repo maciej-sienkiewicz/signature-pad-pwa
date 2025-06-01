@@ -1,6 +1,6 @@
 import React from 'react';
 import StatusIndicator from '../StatusIndicator/StatusIndicator';
-import styles from 'Layout.module.css';
+import styles from './Layout.module.css';
 
 interface LayoutProps {
     children: React.ReactNode;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styles from './IdleScreen.module.css';
-import {useDevice} from "@contexts/DeviceContext";
+import { useDevice } from '../../contexts/DeviceContext';
 
 interface IdleScreenProps {
     isInstallable: boolean;

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { apiClient } from '../../api/client';
-import { useDevice } from '../../hooks/useDevice';
+import { useDevice } from '../../contexts/DeviceContext';
 import styles from './PairingScreen.module.css';
+import {DeviceConfig} from "../../types/device.types";
+
 
 export default function PairingScreen() {
     const [pairingCode, setPairingCode] = useState('');
@@ -15,16 +17,14 @@ export default function PairingScreen() {
         setIsLoading(true);
 
         try {
-            const response = await apiClient.post<any>('/api/tablets/pair', {
-                code: pairingCode,
-                deviceName: `Tablet ${new Date().toLocaleDateString()}`
+            pairDevice({
+                deviceId: "",
+                deviceToken: "string",
+                tenantId: "string",
+                locationId:  "string",
+                friendlyName: "CarsLab",
+                workstationId:  "string"
             });
-
-            if (response.success && response.data) {
-                await pairDevice(response.data);
-            } else {
-                setError(response.error?.message || 'Nieprawidłowy kod parowania');
-            }
         } catch (err) {
             setError('Wystąpił błąd podczas parowania');
         } finally {

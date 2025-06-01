@@ -1,6 +1,6 @@
-import { ENV } from '@config/environment';
-import { APP_CONFIG } from '@config/constants';
 import { DeviceConfig } from '../types/device.types';
+import { ENV } from '../config/environment';
+import { APP_CONFIG } from '../config/constants';
 
 export type WebSocketMessage = {
     type: string;
@@ -23,14 +23,9 @@ export class WebSocketClient {
     private establishConnection(): void {
         if (this.ws?.readyState === WebSocket.OPEN) return;
 
-        const wsUrl = `${ENV.WS_BASE_URL}/ws/tablet/${this.deviceConfig?.deviceId}`;
+        const wsUrl = `${ENV.WS_BASE_URL}/ws/tablet/${this.deviceConfig?.deviceId}?token=${this.deviceConfig?.deviceToken}&tenantId=${this.deviceConfig?.tenantId}`;
 
-        this.ws = new WebSocket(wsUrl, {
-            headers: {
-                'X-Device-Token': this.deviceConfig?.deviceToken || '',
-                'X-Tenant-Id': this.deviceConfig?.tenantId || ''
-            }
-        } as any);
+        this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = this.handleOpen.bind(this);
         this.ws.onmessage = this.handleMessage.bind(this);

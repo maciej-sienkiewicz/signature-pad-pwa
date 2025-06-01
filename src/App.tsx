@@ -5,9 +5,8 @@ import Layout from './components/Layout/Layout';
 import IdleScreen from './components/IdleScreen/IdleScreen';
 import PairingScreen from './components/PairingScreen/PairingScreen';
 import SignaturePad from './components/SignaturePad/SignaturePad';
-import { useDevice } from './hooks/useDevice';
+import { useDevice } from './contexts/DeviceContext';
 import { useWebSocket } from './hooks/useWebSocket';
-import { useWakeLock } from './hooks/useWakeLock';
 import { usePWA } from './hooks/usePWA';
 import { SignatureRequest } from './types/signature.types';
 import './styles/globals.css';
@@ -19,8 +18,6 @@ function AppContent() {
     const { on } = useWebSocket();
     const [signatureRequest, setSignatureRequest] = useState<SignatureRequest | null>(null);
     const { isInstallable, install } = usePWA();
-
-    useWakeLock();
 
     useEffect(() => {
         const unsubscribe = on('signature_request', (data: SignatureRequest) => {

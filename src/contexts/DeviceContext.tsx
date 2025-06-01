@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { StorageService } from '@services/storage.service';
-import { apiClient } from '@api/client';
+import { StorageService } from '../services/storage.service';
+import { apiClient } from '../api/client';
 import {DeviceConfig, DeviceStatus, TenantBranding} from "../types/device.types";
 
 interface DeviceContextValue {

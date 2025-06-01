@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useDevice } from '../../hooks/useDevice';
+import { useDevice } from '../../contexts/DeviceContext';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { DeviceStatus } from '../../types/device.types';
 import styles from './StatusIndicator.module.css';

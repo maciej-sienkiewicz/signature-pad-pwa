@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { wsClient } from '../api/websocket';
-import { useDevice } from './useDevice';
+import { useDevice } from '../contexts/DeviceContext';
 
 export function useWebSocket() {
     const { deviceConfig } = useDevice();
