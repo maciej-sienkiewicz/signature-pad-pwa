@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// src/components/StatusIndicator/StatusIndicator.tsx
+import { useState, useEffect } from 'react';
 import { useDevice } from '../../contexts/DeviceContext';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { DeviceStatus } from '../../types/device.types';
@@ -38,8 +39,8 @@ export default function StatusIndicator() {
             <div className={styles.status}>
                 <div className={`${styles.indicator} ${getStatusColor()}`} />
                 <span className={styles.text}>
-          {connectionStatus === 'connected' ? 'Połączono' : 'Rozłączono'}
-        </span>
+                    {connectionStatus === 'connected' ? 'Połączono' : 'Rozłączono'}
+                </span>
             </div>
         </div>
     );

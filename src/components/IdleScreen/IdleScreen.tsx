@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+// src/components/IdleScreen/IdleScreen.tsx
+import { useEffect, useState } from 'react';
 import styles from './IdleScreen.module.css';
 import { useDevice } from '../../contexts/DeviceContext';
 

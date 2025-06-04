@@ -1,8 +1,9 @@
-import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+// src/components/SignaturePad/SignatureCanvas.tsx
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import SignatureCanvasLib from 'react-signature-canvas';
 import styles from './SignaturePad.module.css';
 
-const SignatureCanvas = forwardRef((props, ref) => {
+const SignatureCanvas = forwardRef((_props, ref) => {
     const canvasRef = useRef<SignatureCanvasLib>(null);
 
     useImperativeHandle(ref, () => ({

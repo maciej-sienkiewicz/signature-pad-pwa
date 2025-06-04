@@ -1,3 +1,4 @@
+// src/types/device.types.ts
 export interface DeviceConfig {
     deviceId: string;
     deviceToken: string;

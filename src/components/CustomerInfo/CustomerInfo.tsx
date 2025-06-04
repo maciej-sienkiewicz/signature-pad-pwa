@@ -1,4 +1,4 @@
-import React from 'react';
+// src/components/CustomerInfo/CustomerInfo.tsx
 import { SignatureRequest } from '../../types/signature.types';
 import styles from './CustomerInfo.module.css';
 
