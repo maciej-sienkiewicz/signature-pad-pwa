@@ -1,16 +1,17 @@
-// src/components/PairingScreen/PairingScreen.tsx - Poprawiona wersja
+// src/components/PairingScreen/PairingScreen.tsx - POPRAWIONA WERSJA
 import { useState, useEffect } from 'react';
 import { DeviceAPI } from '../../api/endpoints/device';
 import { useDevice } from '../../contexts/DeviceContext';
 import styles from './PairingScreen.module.css';
-import {DeviceConfig} from "../../types/device.types";
+import { DeviceConfig } from "../../types/device.types";
 
 export default function PairingScreen() {
     const [pairingCode, setPairingCode] = useState('');
     const [deviceName, setDeviceName] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [step, setStep] = useState<'name' | 'code' | 'dev'>('name');
+    const [step, setStep] = useState<'name' | 'code' | 'generate'>('name');
+    const [generatedCode, setGeneratedCode] = useState('');
     const { pairDevice } = useDevice();
 
     // Auto-generate device name based on current time and location
@@ -32,50 +33,41 @@ export default function PairingScreen() {
     const handleDeviceNameSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (deviceName.trim().length >= 3) {
-            setStep('code');
+            if (process.env.REACT_APP_ENVIRONMENT === 'development') {
+                setStep('generate');
+            } else {
+                setStep('code');
+            }
             setError('');
         } else {
             setError('Nazwa urządzenia musi mieć co najmniej 3 znaki');
         }
     };
 
-    // DODANE: Development mode - bezpośrednie parowanie z test tabletem
-    const handleDevMode = async () => {
+    // Nowa funkcja - generowanie kodu parowania dla dev
+    const handleGenerateCode = async () => {
         setIsLoading(true);
         setError('');
 
         try {
-            // Pobierz dane test tabletu z backendu
-            const response = await fetch('http://localhost:8080/api/dev/create-test-tablet', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    deviceName: deviceName.trim()
-                })
+            // Używamy prawdziwego endpointu do generowania kodu
+            const response = await DeviceAPI.initiateRegistration({
+                tenantId: '12345678-0000-0000-0000-000000000001', // Test tenant ID
+                locationId: '12345678-0000-0000-0000-000000000002', // Test location ID
+                workstationId: '12345678-0000-0000-0000-000000000003' // Optional workstation ID
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to create test tablet');
+            if (response.success && response.data) {
+                setGeneratedCode(response.data.code);
+                setPairingCode(response.data.code);
+                setStep('code');
+                console.log('Generated pairing code:', response.data.code);
+            } else {
+                setError(response.error?.message || 'Błąd podczas generowania kodu');
             }
-
-            const testTabletData = await response.json();
-
-            const deviceConfig: DeviceConfig = {
-                deviceId: testTabletData.deviceId,
-                deviceToken: testTabletData.deviceToken,
-                tenantId: testTabletData.tenantId,
-                locationId: testTabletData.locationId,
-                friendlyName: deviceName.trim()
-            };
-
-            await pairDevice(deviceConfig);
-            console.log('Test tablet paired successfully:', deviceConfig.deviceId);
-
         } catch (err) {
-            console.error('Dev mode pairing error:', err);
-            setError('Błąd podczas parowania w trybie dev. Sprawdź czy backend działa.');
+            console.error('Error generating pairing code:', err);
+            setError('Błąd podczas generowania kodu parowania');
         } finally {
             setIsLoading(false);
         }
@@ -102,12 +94,12 @@ export default function PairingScreen() {
             if (response.success && response.data) {
                 const credentials = response.data;
 
-                // Parse device ID and other info from credentials
+                // Create device config from credentials
                 const deviceConfig: DeviceConfig = {
                     deviceId: credentials.deviceId,
                     deviceToken: credentials.deviceToken,
-                    tenantId: extractTenantIdFromWebSocketUrl(credentials.websocketUrl),
-                    locationId: '', // Will be set later from tenant info
+                    tenantId: extractTenantIdFromWebSocketUrl(credentials.websocketUrl) || '12345678-0000-0000-0000-000000000001',
+                    locationId: '12345678-0000-0000-0000-000000000002', // Default for dev
                     friendlyName: deviceName.trim()
                 };
 
@@ -133,38 +125,47 @@ export default function PairingScreen() {
         }
     };
 
-    const extractTenantIdFromWebSocketUrl = (wsUrl: string): string => {
-        // Extract tenant ID from WebSocket URL if available
-        // This is a fallback - ideally tenant ID should be in the response
+    const extractTenantIdFromWebSocketUrl = (wsUrl: string): string | null => {
         try {
             const url = new URL(wsUrl);
             const pathParts = url.pathname.split('/');
-            // Look for tenant ID in URL structure
-            return pathParts.find(part => part.match(/^[0-9a-f-]{36}$/)) || '';
+            return pathParts.find(part => part.match(/^[0-9a-f-]{36}$/)) || null;
         } catch {
-            return '';
+            return null;
         }
     };
 
     const handleBack = () => {
-        setStep('name');
+        if (step === 'generate') {
+            setStep('name');
+        } else {
+            setStep('name');
+        }
         setError('');
+        setGeneratedCode('');
+        setPairingCode('');
     };
 
-    // DODANE: Development mode screen
-    if (step === 'dev') {
+    // Development mode - kod generation screen
+    if (step === 'generate') {
         return (
             <div className={styles.container}>
                 <div className={styles.card}>
-                    <h1 className={styles.title}>Tryb deweloperski</h1>
+                    <h1 className={styles.title}>Generowanie kodu parowania</h1>
 
                     <p className={styles.description}>
-                        Automatyczne parowanie z test tabletem dla celów rozwoju
+                        Wygeneruj kod parowania dla tabletu w trybie deweloperskim
                     </p>
 
                     <div className={styles.deviceInfo}>
                         <strong>Nazwa urządzenia:</strong> {deviceName}
                     </div>
+
+                    {generatedCode && (
+                        <div className={styles.deviceInfo} style={{ backgroundColor: '#e7f5e7', border: '2px solid #10b981' }}>
+                            <strong>Wygenerowany kod:</strong> {generatedCode}
+                        </div>
+                    )}
 
                     {error && (
                         <div className={styles.error}>
@@ -184,18 +185,28 @@ export default function PairingScreen() {
 
                         <button
                             type="button"
-                            onClick={handleDevMode}
+                            onClick={handleGenerateCode}
                             disabled={isLoading}
                             className={styles.button}
                         >
-                            {isLoading ? 'Łączenie...' : 'Połącz z test tabletem'}
+                            {isLoading ? 'Generowanie...' : 'Wygeneruj kod'}
                         </button>
+
+                        {generatedCode && (
+                            <button
+                                type="button"
+                                onClick={() => setStep('code')}
+                                className={styles.button}
+                                style={{ backgroundColor: '#10b981' }}
+                            >
+                                Użyj kod
+                            </button>
+                        )}
                     </div>
 
                     <div className={styles.helpText}>
                         <p><strong>Tryb deweloperski</strong></p>
-                        <p>Automatycznie tworzy test tablet w bazie danych i łączy się z nim.</p>
-                        <p>Użyj tego tylko do testów lokalnych!</p>
+                        <p>Automatycznie generuje kod parowania używając prawdziwych endpointów API.</p>
                     </div>
                 </div>
             </div>
@@ -239,19 +250,6 @@ export default function PairingScreen() {
                             >
                                 Dalej
                             </button>
-
-                            {/* DODANE: Przycisk trybu deweloperskiego */}
-                            {process.env.REACT_APP_ENVIRONMENT === 'development' && (
-                                <button
-                                    type="button"
-                                    onClick={() => setStep('dev')}
-                                    disabled={deviceName.trim().length < 3 || isLoading}
-                                    className={styles.backButton}
-                                    style={{ backgroundColor: '#10b981' }}
-                                >
-                                    Tryb Dev
-                                </button>
-                            )}
                         </div>
                     </form>
                 </div>
@@ -271,6 +269,12 @@ export default function PairingScreen() {
                 <div className={styles.deviceInfo}>
                     <strong>Nazwa urządzenia:</strong> {deviceName}
                 </div>
+
+                {generatedCode && (
+                    <div className={styles.deviceInfo} style={{ backgroundColor: '#e7f5e7', border: '2px solid #10b981' }}>
+                        <strong>Kod do wprowadzenia:</strong> {generatedCode}
+                    </div>
+                )}
 
                 <form onSubmit={handlePairingSubmit} className={styles.form}>
                     <input
@@ -315,15 +319,11 @@ export default function PairingScreen() {
                     <p>Potrzebujesz pomocy?</p>
                     <p>Skontaktuj się z administratorem systemu CRM, aby uzyskać kod parowania.</p>
 
-                    {/* DODANE: Info o trybie dev */}
                     {process.env.REACT_APP_ENVIRONMENT === 'development' && (
                         <>
                             <br />
-                            <p><strong>Tryb deweloperski:</strong></p>
-                            <p>Możesz też użyć API:</p>
-                            <code style={{ fontSize: '0.8rem', background: '#f0f0f0', padding: '0.2rem' }}>
-                                POST /api/dev/create-pairing-code
-                            </code>
+                            <p>Tryb deweloperski:</p>
+                            <p>Użyj przycisku "Wstecz" i "Dalej" aby wygenerować kod automatycznie.</p>
                         </>
                     )}
                 </div>
