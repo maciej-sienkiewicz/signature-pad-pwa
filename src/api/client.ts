@@ -29,10 +29,14 @@ class ApiClient {
         if (deviceConfig) {
             headers['Authorization'] = `Bearer ${deviceConfig.deviceToken}`;
             headers['X-Device-Id'] = deviceConfig.deviceId;
-            headers['X-Tenant-Id'] = deviceConfig.tenantId;
+            headers['X-Company-Id'] = deviceConfig.companyId.toString(); // Changed from X-Tenant-Id
 
             if (deviceConfig.locationId) {
                 headers['X-Location-Id'] = deviceConfig.locationId;
+            }
+
+            if (deviceConfig.workstationId) {
+                headers['X-Workstation-Id'] = deviceConfig.workstationId;
             }
         }
 
@@ -79,7 +83,7 @@ class ApiClient {
                     break;
                 case 403:
                     errorCode = 'FORBIDDEN';
-                    errorMessage = 'Access denied';
+                    errorMessage = 'Access denied - device may not be authorized for this company';
                     break;
                 case 404:
                     errorCode = 'NOT_FOUND';

@@ -215,9 +215,9 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
             storage.saveDeviceConfig(config);
             setDeviceConfig(config);
 
-            // Fetch tenant branding if tenantId is available
-            if (config.tenantId) {
-                await fetchTenantBranding(config.tenantId);
+            // Fetch company branding if companyId is available
+            if (config.companyId) {
+                await fetchCompanyBranding(config.companyId);
             }
 
             // Connect WebSocket
@@ -234,9 +234,9 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const fetchTenantBranding = async (tenantId: string): Promise<void> => {
+    const fetchCompanyBranding = async (companyId: number): Promise<void> => {
         try {
-            const brandingResponse = await DeviceAPI.getTenantBranding(tenantId);
+            const brandingResponse = await DeviceAPI.getCompanyBranding(companyId);
 
             if (brandingResponse.success && brandingResponse.data) {
                 const branding = brandingResponse.data;
@@ -245,9 +245,9 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
                 setTenantBranding(branding);
                 applyBrandingToCSS(branding);
 
-                console.log('Tenant branding loaded successfully');
+                console.log('Company branding loaded successfully');
             } else {
-                console.warn('Could not load tenant branding:', brandingResponse.error);
+                console.warn('Could not load company branding:', brandingResponse.error);
                 // Use default branding
                 const defaultBranding: TenantBranding = {
                     primaryColor: '#1a1a1a',
@@ -259,7 +259,7 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
                 applyBrandingToCSS(defaultBranding);
             }
         } catch (error) {
-            console.error('Error fetching tenant branding:', error);
+            console.error('Error fetching company branding:', error);
         }
     };
 

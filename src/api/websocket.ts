@@ -1,4 +1,4 @@
-// src/api/websocket.ts - Kompletna implementacja WebSocket Client
+// src/api/websocket.ts - Kompletna implementacja WebSocket Client (Updated)
 import { DeviceConfig } from '../types/device.types';
 import { ENV } from '../config/environment';
 import { APP_CONFIG } from '../config/constants';
@@ -83,8 +83,9 @@ export class WebSocketClient {
             payload: {
                 token: this.deviceConfig.deviceToken,
                 deviceId: this.deviceConfig.deviceId,
-                tenantId: this.deviceConfig.tenantId,
+                companyId: this.deviceConfig.companyId,      // Changed from tenantId
                 locationId: this.deviceConfig.locationId,
+                workstationId: this.deviceConfig.workstationId,
                 timestamp: new Date().toISOString()
             }
         };
@@ -93,6 +94,7 @@ export class WebSocketClient {
         this.authenticationSent = true;
         console.log('Authentication message sent:', {
             deviceId: this.deviceConfig.deviceId,
+            companyId: this.deviceConfig.companyId,          // Changed from tenantId
             tokenPreview: this.deviceConfig.deviceToken.substring(0, 20) + '...'
         });
     }
@@ -266,7 +268,8 @@ export class WebSocketClient {
             if (this.ws?.readyState === WebSocket.OPEN && this.connectionStatus === 'authenticated') {
                 this.send('heartbeat', {
                     timestamp: new Date().toISOString(),
-                    deviceId: this.deviceConfig?.deviceId
+                    deviceId: this.deviceConfig?.deviceId,
+                    companyId: this.deviceConfig?.companyId    // Changed from tenantId
                 });
 
                 // Check if server is responding to heartbeats
@@ -375,7 +378,8 @@ export class WebSocketClient {
             sessionId,
             success,
             timestamp: new Date().toISOString(),
-            deviceId: this.deviceConfig?.deviceId
+            deviceId: this.deviceConfig?.deviceId,
+            companyId: this.deviceConfig?.companyId          // Changed from tenantId
         });
 
         console.log('Signature completion acknowledged:', { sessionId, success });
@@ -392,7 +396,8 @@ export class WebSocketClient {
         this.send('tablet_status', {
             ...status,
             timestamp: new Date().toISOString(),
-            deviceId: this.deviceConfig?.deviceId
+            deviceId: this.deviceConfig?.deviceId,
+            companyId: this.deviceConfig?.companyId          // Changed from tenantId
         });
 
         if (ENV.DEBUG_MODE) {
@@ -445,6 +450,7 @@ export class WebSocketClient {
         isAuthenticated: boolean;
         readyState: number | null;
         deviceId: string | null;
+        companyId: number | null;    // Changed from tenantId
     } {
         return {
             status: this.connectionStatus,
@@ -452,7 +458,8 @@ export class WebSocketClient {
             lastHeartbeat: this.lastHeartbeat,
             isAuthenticated: this.isAuthenticated(),
             readyState: this.getReadyState(),
-            deviceId: this.deviceConfig?.deviceId || null
+            deviceId: this.deviceConfig?.deviceId || null,
+            companyId: this.deviceConfig?.companyId || null  // Changed from tenantId
         };
     }
 

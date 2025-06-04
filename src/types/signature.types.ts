@@ -1,6 +1,8 @@
+// src/types/signature.types.ts
 export interface SignatureRequest {
     sessionId: string;
-    customerId: string;
+    companyId: number;          // Changed from customerId, now numeric companyId
+    workstationId: string;      // Added workstationId
     customerName: string;
     vehicleInfo: {
         make: string;
@@ -9,9 +11,11 @@ export interface SignatureRequest {
         vin?: string;
     };
     serviceType: string;
-    documentId: string;
+    documentId?: string;        // Made optional
     documentType: string;
     timestamp: string;
+    // Additional fields that might come from backend
+    additionalNotes?: string;
 }
 
 export interface SignatureData {

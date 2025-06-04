@@ -50,12 +50,8 @@ export default function PairingScreen() {
         setError('');
 
         try {
-            // Używamy prawdziwego endpointu do generowania kodu
-            const response = await DeviceAPI.initiateRegistration({
-                tenantId: '12345678-0000-0000-0000-000000000001', // Test tenant ID
-                locationId: '12345678-0000-0000-0000-000000000002', // Test location ID
-                workstationId: '12345678-0000-0000-0000-000000000003' // Optional workstation ID
-            });
+            // Używamy test endpointu do generowania kodu w trybie deweloperskim
+            const response = await DeviceAPI.generateTestPairingCode();
 
             if (response.success && response.data) {
                 setGeneratedCode(response.data.code);
@@ -94,12 +90,16 @@ export default function PairingScreen() {
             if (response.success && response.data) {
                 const credentials = response.data;
 
+                // Extract companyId from JWT token or WebSocket URL
+                const companyId = extractCompanyIdFromToken(credentials.deviceToken) || 1; // fallback to 1
+
                 // Create device config from credentials
                 const deviceConfig: DeviceConfig = {
                     deviceId: credentials.deviceId,
                     deviceToken: credentials.deviceToken,
-                    tenantId: extractTenantIdFromWebSocketUrl(credentials.websocketUrl) || '12345678-0000-0000-0000-000000000001',
-                    locationId: '12345678-0000-0000-0000-000000000002', // Default for dev
+                    companyId: companyId,                           // Changed from tenantId
+                    locationId: extractLocationIdFromWebSocketUrl(credentials.websocketUrl) ||
+                        generateLocationId(),                 // Generate if not available
                     friendlyName: deviceName.trim()
                 };
 
@@ -125,14 +125,51 @@ export default function PairingScreen() {
         }
     };
 
-    const extractTenantIdFromWebSocketUrl = (wsUrl: string): string | null => {
+    const extractCompanyIdFromToken = (token: string): number | null => {
         try {
+            // Decode JWT token to extract companyId
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            const payload = JSON.parse(jsonPayload);
+            return payload.companyId || null;
+        } catch (error) {
+            console.warn('Could not extract companyId from token:', error);
+            return null;
+        }
+    };
+
+    const extractLocationIdFromWebSocketUrl = (wsUrl: string): string | null => {
+        try {
+            // Extract location info from WebSocket URL if available
             const url = new URL(wsUrl);
             const pathParts = url.pathname.split('/');
+
+            // Look for location parameter in query string
+            const searchParams = new URLSearchParams(url.search);
+            const locationId = searchParams.get('locationId');
+
+            if (locationId) {
+                return locationId;
+            }
+
+            // Fallback: look for UUID-like patterns in path
             return pathParts.find(part => part.match(/^[0-9a-f-]{36}$/)) || null;
         } catch {
             return null;
         }
+    };
+
+    const generateLocationId = (): string => {
+        // Generate a UUID for location if not provided
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
     };
 
     const handleBack = () => {
@@ -207,6 +244,7 @@ export default function PairingScreen() {
                     <div className={styles.helpText}>
                         <p><strong>Tryb deweloperski</strong></p>
                         <p>Automatycznie generuje kod parowania używając prawdziwych endpointów API.</p>
+                        <p><em>Uwaga: Kod parowania musi być wygenerowany w głównej aplikacji CRM w trybie produkcyjnym.</em></p>
                     </div>
                 </div>
             </div>
@@ -252,6 +290,11 @@ export default function PairingScreen() {
                             </button>
                         </div>
                     </form>
+
+                    <div className={styles.helpText}>
+                        <p>Nazwa tabletu pomaga w identyfikacji urządzenia w systemie CRM.</p>
+                        <p>Może zawierać nazwę lokalizacji, stanowiska lub inne informacje pomocne w zarządzaniu.</p>
+                    </div>
                 </div>
             </div>
         );
@@ -318,11 +361,12 @@ export default function PairingScreen() {
                 <div className={styles.helpText}>
                     <p>Potrzebujesz pomocy?</p>
                     <p>Skontaktuj się z administratorem systemu CRM, aby uzyskać kod parowania.</p>
+                    <p><em>Kod parowania jest generowany w głównej aplikacji CRM po kliknięciu "Sparuj Tablet".</em></p>
 
                     {process.env.REACT_APP_ENVIRONMENT === 'development' && (
                         <>
                             <br />
-                            <p>Tryb deweloperski:</p>
+                            <p><strong>Tryb deweloperski:</strong></p>
                             <p>Użyj przycisku "Wstecz" i "Dalej" aby wygenerować kod automatycznie.</p>
                         </>
                     )}

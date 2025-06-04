@@ -2,7 +2,7 @@
 export interface DeviceConfig {
     deviceId: string;
     deviceToken: string;
-    tenantId: string;
+    companyId: number;        // Changed from tenantId to companyId (number)
     locationId: string;
     friendlyName: string;
     workstationId?: string;
@@ -15,6 +15,9 @@ export interface TenantBranding {
     companyName: string;
     welcomeMessage?: string;
 }
+
+// Keep TenantBranding name for backwards compatibility even though it's now company-based
+export type CompanyBranding = TenantBranding;
 
 export enum DeviceStatus {
     DISCONNECTED = 'DISCONNECTED',

@@ -16,7 +16,7 @@ export const APP_CONFIG = {
     // Storage keys
     STORAGE_KEYS: {
         DEVICE_CONFIG: 'crm_device_config',
-        TENANT_BRANDING: 'crm_tenant_branding',
+        TENANT_BRANDING: 'crm_tenant_branding',    // Keep name for backwards compatibility
         LAST_SYNC: 'crm_last_sync',
         APP_STATE: 'crm_app_state'
     },
@@ -64,10 +64,10 @@ export const APP_CONFIG = {
 export const API_ENDPOINTS = {
     // Device Management
     TABLETS: {
-        REGISTER: '/tablets/register',
         PAIR: '/tablets/pair',
         INFO: (deviceId: string) => `/tablets/${deviceId}`,
-        STATUS: (deviceId: string) => `/tablets/${deviceId}/status`
+        STATUS: (deviceId: string) => `/tablets/${deviceId}/status`,
+        DEV_GENERATE_CODE: '/tablets/dev/generate-pairing-code'  // For development only
     },
 
     // Signatures
@@ -78,10 +78,10 @@ export const API_ENDPOINTS = {
         ACKNOWLEDGE: (sessionId: string) => `/signatures/${sessionId}/acknowledge`
     },
 
-    // Tenant Management
-    TENANTS: {
-        BRANDING: (tenantId: string) => `/tenants/${tenantId}/branding`,
-        INFO: (tenantId: string) => `/tenants/${tenantId}`
+    // Company Management (changed from Tenant)
+    COMPANIES: {
+        BRANDING: (companyId: number) => `/companies/${companyId}/branding`,
+        INFO: (companyId: number) => `/companies/${companyId}`
     },
 
     // System
@@ -139,7 +139,11 @@ export const ERROR_CODES = {
     // Validation Errors
     VALIDATION_ERROR: 'VALIDATION_ERROR',
     INVALID_FORMAT: 'INVALID_FORMAT',
-    MISSING_REQUIRED_FIELD: 'MISSING_REQUIRED_FIELD'
+    MISSING_REQUIRED_FIELD: 'MISSING_REQUIRED_FIELD',
+
+    // Company/Access Errors
+    COMPANY_ACCESS_DENIED: 'COMPANY_ACCESS_DENIED',
+    INVALID_COMPANY_ID: 'INVALID_COMPANY_ID'
 } as const;
 
 // Device Capabilities
