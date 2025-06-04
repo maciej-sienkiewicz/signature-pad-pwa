@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Panel Szablonów",
+  "version": "1.0",
+  "description": "Wtyczka do zarządzania szablonami wiadomości",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "action": {
+    "default_title": "Otwórz panel szablonów"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src https: http: data: blob: filesystem: http://srv33.mikr.us:20275;"
+  }
+}
