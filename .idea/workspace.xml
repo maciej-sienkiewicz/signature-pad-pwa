@@ -5,30 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="plugin">
-      <change afterPath="$PROJECT_DIR$/src/components/ErrorBoundary/ErrorBoundary.module.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/types/experimental.d.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api/client.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/client.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api/endpoints/device.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/endpoints/device.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api/endpoints/signature.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/endpoints/signature.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/api/websocket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/websocket.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/CustomerInfo/CustomerInfo.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/CustomerInfo/CustomerInfo.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/IdleScreen/IdleScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/IdleScreen/IdleScreen.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/PairingScreen/PairingScreen.module.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/PairingScreen/PairingScreen.module.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/components/PairingScreen/PairingScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/PairingScreen/PairingScreen.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/SignaturePad/SignatureCanvas.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SignaturePad/SignatureCanvas.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/SignaturePad/SignaturePad.module.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SignaturePad/SignaturePad.module.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/SignaturePad/SignaturePad.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SignaturePad/SignaturePad.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/StatusIndicator/StatusIndicator.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/StatusIndicator/StatusIndicator.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/config/constants.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/config/constants.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/config/environment.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/config/environment.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/contexts/DeviceContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/contexts/DeviceContext.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hooks/useDevice.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ErrorBoundary/ErrorBoundary.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/device.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/device.types.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/tsconfig.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

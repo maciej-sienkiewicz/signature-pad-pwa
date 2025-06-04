@@ -1,4 +1,4 @@
-// src/api/websocket.ts
+// src/api/websocket.ts - Kompletna implementacja WebSocket Client
 import { DeviceConfig } from '../types/device.types';
 import { ENV } from '../config/environment';
 import { APP_CONFIG } from '../config/constants';
@@ -20,6 +20,7 @@ export class WebSocketClient {
     private connectionStatus: ConnectionStatus = 'disconnected';
     private lastHeartbeat: number = 0;
     private isIntentionalDisconnect = false;
+    private authenticationSent = false;
 
     connect(deviceConfig: DeviceConfig): void {
         if (this.connectionStatus === 'connected' || this.connectionStatus === 'connecting') {
@@ -29,6 +30,7 @@ export class WebSocketClient {
 
         this.deviceConfig = deviceConfig;
         this.isIntentionalDisconnect = false;
+        this.authenticationSent = false;
         this.establishConnection();
     }
 
@@ -41,10 +43,13 @@ export class WebSocketClient {
         this.setConnectionStatus('connecting');
 
         try {
-            // Build WebSocket URL with proper authentication
-            const wsUrl = new URL(`${ENV.WS_BASE_URL}/ws/tablet/${this.deviceConfig.deviceId}`);
+            // Build WebSocket URL - używamy deviceId bezpośrednio
+            const wsUrl = `${ENV.WS_BASE_URL}/ws/tablet/${this.deviceConfig.deviceId}`;
 
-            this.ws = new WebSocket(wsUrl.toString());
+            console.log('WebSocket handshake attempt:', wsUrl);
+
+            // Tworzymy połączenie WebSocket bez custom headers
+            this.ws = new WebSocket(wsUrl);
 
             // Set up event handlers
             this.ws.onopen = this.handleOpen.bind(this);
@@ -60,19 +65,18 @@ export class WebSocketClient {
     }
 
     private handleOpen(): void {
-        console.log('WebSocket connected successfully');
+        console.log('WebSocket handshake successful:', `${ENV.WS_BASE_URL}/ws/tablet/${this.deviceConfig?.deviceId}`);
         this.reconnectAttempts = 0;
         this.setConnectionStatus('connected');
 
-        // Send authentication message with device token
+        // Natychmiast wyślij token autoryzacyjny jako pierwszą wiadomość
         this.sendAuthenticationMessage();
 
-        this.startHeartbeat();
         this.emit('connection', { status: 'connected' });
     }
 
     private sendAuthenticationMessage(): void {
-        if (!this.deviceConfig) return;
+        if (!this.deviceConfig || this.authenticationSent) return;
 
         const authMessage = {
             type: 'authentication',
@@ -86,6 +90,11 @@ export class WebSocketClient {
         };
 
         this.sendRaw(authMessage);
+        this.authenticationSent = true;
+        console.log('Authentication message sent:', {
+            deviceId: this.deviceConfig.deviceId,
+            tokenPreview: this.deviceConfig.deviceToken.substring(0, 20) + '...'
+        });
     }
 
     private handleMessage(event: MessageEvent): void {
@@ -137,18 +146,24 @@ export class WebSocketClient {
         if (payload.status === 'authenticated') {
             console.log('WebSocket authentication successful');
             this.setConnectionStatus('authenticated');
+            this.startHeartbeat();
             this.emit('authenticated', payload);
-        } else {
-            console.error('WebSocket authentication failed:', payload.error);
+            this.emit('connection', { status: 'authenticated' });
+        } else if (payload.status === 'failed' || payload.error) {
+            console.error('WebSocket authentication failed:', payload.error || payload);
             this.setConnectionStatus('error');
             this.emit('authentication_failed', payload);
+            this.emit('error', {
+                code: 'AUTHENTICATION_FAILED',
+                message: payload.error || 'Authentication failed'
+            });
         }
     }
 
-    private handleHeartbeatResponse(_payload: any): void {
+    private handleHeartbeatResponse(payload: any): void {
         this.lastHeartbeat = Date.now();
         if (ENV.DEBUG_MODE) {
-            console.log('Heartbeat acknowledged by server');
+            console.log('Heartbeat acknowledged by server at:', new Date(payload.timestamp || Date.now()));
         }
     }
 
@@ -174,11 +189,17 @@ export class WebSocketClient {
 
     private handleConnectionMessage(payload: any): void {
         console.log('Connection status update:', payload.status);
+
+        if (payload.status === 'connected' && !payload.authenticated) {
+            // Server potwierdza połączenie ale czeka na autentykację
+            console.log('Connection established, authentication expected');
+        }
+
         this.emit('connection', payload);
     }
 
     private handleErrorMessage(payload: any): void {
-        console.error('Server error:', payload.error);
+        console.error('Server error:', payload.error || payload);
         this.emit('error', payload);
     }
 
@@ -187,6 +208,7 @@ export class WebSocketClient {
 
         this.setConnectionStatus('disconnected');
         this.stopHeartbeat();
+        this.authenticationSent = false;
 
         this.emit('connection', {
             status: 'disconnected',
@@ -241,7 +263,7 @@ export class WebSocketClient {
         this.stopHeartbeat(); // Clear any existing interval
 
         this.heartbeatInterval = setInterval(() => {
-            if (this.ws?.readyState === WebSocket.OPEN) {
+            if (this.ws?.readyState === WebSocket.OPEN && this.connectionStatus === 'authenticated') {
                 this.send('heartbeat', {
                     timestamp: new Date().toISOString(),
                     deviceId: this.deviceConfig?.deviceId
@@ -255,12 +277,15 @@ export class WebSocketClient {
                 }
             }
         }, APP_CONFIG.WS_HEARTBEAT_INTERVAL);
+
+        console.log('Heartbeat started, interval:', APP_CONFIG.WS_HEARTBEAT_INTERVAL + 'ms');
     }
 
     private stopHeartbeat(): void {
         if (this.heartbeatInterval) {
             clearInterval(this.heartbeatInterval);
             this.heartbeatInterval = null;
+            console.log('Heartbeat stopped');
         }
     }
 
@@ -269,17 +294,27 @@ export class WebSocketClient {
             const audio = new Audio('/sounds/notification.mp3');
             audio.volume = 0.5;
             audio.play().catch(error => {
-                console.warn('Could not play notification sound:', error);
+                if (ENV.DEBUG_MODE) {
+                    console.warn('Could not play notification sound:', error);
+                }
             });
         } catch (error) {
-            console.warn('Notification sound not available:', error);
+            if (ENV.DEBUG_MODE) {
+                console.warn('Notification sound not available:', error);
+            }
         }
     }
 
     private setConnectionStatus(status: ConnectionStatus): void {
         if (this.connectionStatus !== status) {
+            const previousStatus = this.connectionStatus;
             this.connectionStatus = status;
-            this.emit('connection_status_changed', { status });
+            console.log(`WebSocket status changed: ${previousStatus} → ${status}`);
+            this.emit('connection_status_changed', {
+                status,
+                previousStatus,
+                timestamp: new Date().toISOString()
+            });
         }
     }
 
@@ -291,15 +326,17 @@ export class WebSocketClient {
     private sendRaw(message: any): void {
         if (this.ws?.readyState === WebSocket.OPEN) {
             try {
-                this.ws.send(JSON.stringify(message));
+                const jsonMessage = JSON.stringify(message);
+                this.ws.send(jsonMessage);
+
                 if (ENV.DEBUG_MODE && message.type !== 'heartbeat') {
-                    console.log('WebSocket message sent:', message.type);
+                    console.log('WebSocket message sent:', message.type, message.payload);
                 }
             } catch (error) {
                 console.error('Failed to send WebSocket message:', error);
             }
         } else {
-            console.warn('WebSocket is not connected, cannot send message:', message.type);
+            console.warn(`WebSocket is not connected (readyState: ${this.ws?.readyState}), cannot send message:`, message.type);
         }
     }
 
@@ -340,6 +377,8 @@ export class WebSocketClient {
             timestamp: new Date().toISOString(),
             deviceId: this.deviceConfig?.deviceId
         });
+
+        console.log('Signature completion acknowledged:', { sessionId, success });
     }
 
     /**
@@ -355,16 +394,86 @@ export class WebSocketClient {
             timestamp: new Date().toISOString(),
             deviceId: this.deviceConfig?.deviceId
         });
+
+        if (ENV.DEBUG_MODE) {
+            console.log('Status update sent:', status);
+        }
     }
 
+    /**
+     * Get current connection status
+     */
     getConnectionStatus(): ConnectionStatus {
         return this.connectionStatus;
     }
 
+    /**
+     * Check if WebSocket is connected and authenticated
+     */
     isConnected(): boolean {
         return this.connectionStatus === 'connected' || this.connectionStatus === 'authenticated';
     }
 
+    /**
+     * Check if WebSocket is authenticated
+     */
+    isAuthenticated(): boolean {
+        return this.connectionStatus === 'authenticated';
+    }
+
+    /**
+     * Get WebSocket ready state
+     */
+    getReadyState(): number | null {
+        return this.ws?.readyState || null;
+    }
+
+    /**
+     * Get device configuration
+     */
+    getDeviceConfig(): DeviceConfig | null {
+        return this.deviceConfig;
+    }
+
+    /**
+     * Get connection statistics
+     */
+    getConnectionStats(): {
+        status: ConnectionStatus;
+        reconnectAttempts: number;
+        lastHeartbeat: number;
+        isAuthenticated: boolean;
+        readyState: number | null;
+        deviceId: string | null;
+    } {
+        return {
+            status: this.connectionStatus,
+            reconnectAttempts: this.reconnectAttempts,
+            lastHeartbeat: this.lastHeartbeat,
+            isAuthenticated: this.isAuthenticated(),
+            readyState: this.getReadyState(),
+            deviceId: this.deviceConfig?.deviceId || null
+        };
+    }
+
+    /**
+     * Force reconnection
+     */
+    reconnect(): void {
+        if (this.deviceConfig) {
+            console.log('Forcing WebSocket reconnection...');
+            this.disconnect();
+            setTimeout(() => {
+                this.connect(this.deviceConfig!);
+            }, 1000);
+        } else {
+            console.warn('Cannot reconnect - no device config available');
+        }
+    }
+
+    /**
+     * Disconnect WebSocket
+     */
     disconnect(): void {
         this.isIntentionalDisconnect = true;
 
@@ -376,13 +485,29 @@ export class WebSocketClient {
         this.stopHeartbeat();
 
         if (this.ws) {
+            console.log('Closing WebSocket connection...');
             this.ws.close(1000, 'Client disconnect');
             this.ws = null;
         }
 
         this.setConnectionStatus('disconnected');
         this.reconnectAttempts = 0;
+        this.authenticationSent = false;
+    }
+
+    /**
+     * Cleanup - call when component unmounts
+     */
+    cleanup(): void {
+        this.disconnect();
+        this.listeners.clear();
     }
 }
 
+// Export singleton instance
 export const wsClient = new WebSocketClient();
+
+// Export for debugging in browser console
+if (ENV.DEBUG_MODE && typeof window !== 'undefined') {
+    (window as any).wsClient = wsClient;
+}
