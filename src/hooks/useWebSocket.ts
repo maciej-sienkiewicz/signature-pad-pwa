@@ -1,5 +1,6 @@
+// src/hooks/useWebSocket.ts
 import { useEffect, useCallback, useRef } from 'react';
-import { wsClient } from '../api/websocket';
+import { tabletWebSocketHandler } from '../services/TabletWebSocketHandler';
 import { useDevice } from '../contexts/DeviceContext';
 
 export function useWebSocket() {
@@ -8,26 +9,59 @@ export function useWebSocket() {
 
     useEffect(() => {
         if (deviceConfig && !connectedRef.current) {
-            wsClient.connect(deviceConfig);
+            tabletWebSocketHandler.connect(deviceConfig);
             connectedRef.current = true;
         }
 
         return () => {
             if (connectedRef.current) {
-                wsClient.disconnect();
+                tabletWebSocketHandler.disconnect();
                 connectedRef.current = false;
             }
         };
     }, [deviceConfig]);
 
     const on = useCallback((event: string, callback: (data: any) => void) => {
-        wsClient.on(event, callback);
-        return () => wsClient.off(event, callback);
+        const unsubscribe = tabletWebSocketHandler.on(event, callback);
+        return unsubscribe;
     }, []);
 
     const send = useCallback((type: string, payload: any) => {
-        wsClient.send(type, payload);
+        tabletWebSocketHandler.send(type, payload);
     }, []);
 
-    return { on, send };
+    const acknowledgeSignatureCompletion = useCallback((sessionId: string, success: boolean) => {
+        tabletWebSocketHandler.acknowledgeSignatureCompletion(sessionId, success);
+    }, []);
+
+    const sendStatusUpdate = useCallback(() => {
+        tabletWebSocketHandler.sendStatusUpdate();
+    }, []);
+
+    const getConnectionStatus = useCallback(() => {
+        return tabletWebSocketHandler.getConnectionStatus();
+    }, []);
+
+    const isConnected = useCallback(() => {
+        return tabletWebSocketHandler.isConnected();
+    }, []);
+
+    const isAuthenticated = useCallback(() => {
+        return tabletWebSocketHandler.isAuthenticated();
+    }, []);
+
+    const reconnect = useCallback(() => {
+        tabletWebSocketHandler.reconnect();
+    }, []);
+
+    return {
+        on,
+        send,
+        acknowledgeSignatureCompletion,
+        sendStatusUpdate,
+        getConnectionStatus,
+        isConnected,
+        isAuthenticated,
+        reconnect
+    };
 }

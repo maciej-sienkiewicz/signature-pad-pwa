@@ -1,4 +1,4 @@
-// src/App.tsx
+// src/App.tsx - Updated version
 import { useState, useEffect } from 'react';
 import { DeviceProvider } from './contexts/DeviceContext';
 import { SignatureProvider } from './contexts/SignatureContext';
@@ -19,7 +19,7 @@ import './styles/animations.css';
 
 function AppContent() {
     const { deviceConfig, deviceStatus, isOnline } = useDevice();
-    const { on } = useWebSocket();
+    const { on, acknowledgeSignatureCompletion } = useWebSocket();
     const [signatureRequest, setSignatureRequest] = useState<SignatureRequest | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [connectionError, setConnectionError] = useState<string | null>(null);
@@ -42,6 +42,37 @@ function AppContent() {
             playNotificationSound();
         });
 
+        const unsubscribeSimpleSignatureRequest = on('simple_signature_request', (data: any) => {
+            console.log('Simple signature request received:', data.sessionId);
+
+            // Convert simple signature to regular signature request format
+            const signatureRequestData: SignatureRequest = {
+                sessionId: data.sessionId,
+                workstationId: 'simple-' + data.sessionId,
+                companyId: 2,
+                customerName: data.signerName,
+                vehicleInfo: {
+                    make: data.businessContext?.vehicleInfo?.make || '',
+                    model: data.businessContext?.vehicleInfo?.model || '',
+                    licensePlate: data.businessContext?.vehicleInfo?.licensePlate || ''
+                },
+                serviceType: data.signatureTitle,
+                documentId: 'simple-' + data.sessionId,
+                documentType: data.signatureType || 'Simple Signature',
+                timestamp: data.timestamp || new Date().toISOString()
+            };
+
+            setSignatureRequest(signatureRequestData);
+
+            // Vibrate to notify user
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200]);
+            }
+
+            // Play notification sound
+            playNotificationSound();
+        });
+
         const unsubscribeConnection = on('connection', (data: any) => {
             console.log('Connection status:', data.status);
 
@@ -52,17 +83,50 @@ function AppContent() {
             }
         });
 
+        const unsubscribeSessionCancelled = on('session_cancelled', (data: any) => {
+            console.log('Session cancelled:', data.sessionId);
+
+            // If current session is cancelled, clear it
+            if (signatureRequest && signatureRequest.sessionId === data.sessionId) {
+                setSignatureRequest(null);
+            }
+        });
+
+        const unsubscribeSimpleSessionCancelled = on('simple_session_cancelled', (data: any) => {
+            console.log('Simple session cancelled:', data.sessionId);
+
+            // If current session is cancelled, clear it
+            if (signatureRequest && signatureRequest.sessionId === data.sessionId) {
+                setSignatureRequest(null);
+            }
+        });
+
         const unsubscribeError = on('error', (data: any) => {
             console.error('WebSocket error:', data);
             setConnectionError(data.message || 'Wystąpił błąd połączenia');
         });
 
+        const unsubscribeAuthenticated = on('authenticated', (data: any) => {
+            console.log('WebSocket authenticated:', data);
+            setConnectionError(null);
+        });
+
+        const unsubscribeAuthenticationFailed = on('authentication_failed', (data: any) => {
+            console.error('WebSocket authentication failed:', data);
+            setConnectionError('Błąd uwierzytelnienia urządzenia');
+        });
+
         return () => {
             unsubscribeSignatureRequest();
+            unsubscribeSimpleSignatureRequest();
             unsubscribeConnection();
+            unsubscribeSessionCancelled();
+            unsubscribeSimpleSessionCancelled();
             unsubscribeError();
+            unsubscribeAuthenticated();
+            unsubscribeAuthenticationFailed();
         };
-    }, [on, deviceConfig]);
+    }, [on, deviceConfig, signatureRequest]);
 
     // Initialize app
     useEffect(() => {
@@ -72,7 +136,6 @@ function AppContent() {
 
                 // Check if device is configured
                 if (deviceConfig) {
-                    // Additional initialization for configured devices
                     console.log('Device configured:', deviceConfig.deviceId);
                 }
 
@@ -116,11 +179,23 @@ function AppContent() {
 
     const handleSignatureComplete = () => {
         console.log('Signature completed for session:', signatureRequest?.sessionId);
+
+        if (signatureRequest) {
+            // Acknowledge completion
+            acknowledgeSignatureCompletion(signatureRequest.sessionId, true);
+        }
+
         setSignatureRequest(null);
     };
 
     const handleSignatureCancel = () => {
         console.log('Signature cancelled for session:', signatureRequest?.sessionId);
+
+        if (signatureRequest) {
+            // Acknowledge cancellation
+            acknowledgeSignatureCompletion(signatureRequest.sessionId, false);
+        }
+
         setSignatureRequest(null);
     };
 

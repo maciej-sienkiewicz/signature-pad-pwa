@@ -4,11 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="CHECKPOINT">
-      <change afterPath="$PROJECT_DIR$/src/api/endpoints/simple-signature.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/components/SimpleSignaturePad/SimpleSignaturePad.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/types/simple-signature.types.ts" afterDir="false" />
+    <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="test">
+      <change afterPath="$PROJECT_DIR$/src/services/TabletSignatureHandler.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hooks/useWebSocket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/useWebSocket.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -120,7 +121,15 @@
       <option name="project" value="LOCAL" />
       <updated>1749074112503</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="test">
+      <option name="closed" value="true" />
+      <created>1749126755755</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1749126755755</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -132,7 +141,8 @@
     <MESSAGE value="plugin" />
     <MESSAGE value="tablety kolejna proba" />
     <MESSAGE value="CHECKPOINT" />
-    <option name="LAST_COMMIT_MESSAGE" value="CHECKPOINT" />
+    <MESSAGE value="test" />
+    <option name="LAST_COMMIT_MESSAGE" value="test" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
