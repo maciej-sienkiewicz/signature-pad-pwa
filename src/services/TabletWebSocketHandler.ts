@@ -1,4 +1,4 @@
-// src/services/TabletWebSocketHandler.ts
+// src/services/TabletWebSocketHandler.ts - POPRAWIONA WERSJA
 import { DeviceConfig } from '../types/device.types';
 import { SignatureRequest } from '../types/signature.types';
 import { ENV } from '../config/environment';
@@ -173,8 +173,9 @@ export class TabletWebSocketHandler {
         }
     }
 
+    // POPRAWIONA FUNKCJA - główny fix
     private handleSignatureRequest(payload: any): void {
-        console.log('Signature request received:', payload.sessionId);
+        console.log('Signature request received:', payload);
 
         // Validate signature request
         if (!payload.sessionId || !payload.customerName) {
@@ -182,33 +183,57 @@ export class TabletWebSocketHandler {
             return;
         }
 
-        // Convert to frontend SignatureRequest format
-        const signatureRequest: SignatureRequest = {
-            sessionId: payload.sessionId,
-            workstationId: payload.workstationId || 'unknown',
-            companyId: payload.companyId || 2,
-            customerName: payload.customerName,
-            vehicleInfo: {
-                make: payload.vehicleInfo?.make || '',
-                model: payload.vehicleInfo?.model || '',
-                licensePlate: payload.vehicleInfo?.licensePlate || payload.vehicleInfo?.license_plate || '',
-                vin: payload.vehicleInfo?.vin
-            },
-            serviceType: payload.serviceType || 'Usługa serwisowa',
-            documentId: payload.documentId || 'doc-' + payload.sessionId,
-            documentType: payload.documentType || 'Potwierdzenie wykonania usługi',
-            timestamp: payload.timestamp || new Date().toISOString()
-        };
+        try {
+            // POPRAWKA: Konwertuj timestamp z Unix timestamp do ISO string jeśli potrzeba
+            let timestamp = payload.timestamp;
+            if (typeof timestamp === 'number') {
+                timestamp = new Date(timestamp * 1000).toISOString();
+            } else if (!timestamp) {
+                timestamp = new Date().toISOString();
+            }
 
-        // Add notification effects
-        this.playNotificationSound();
-        this.vibrate();
+            // POPRAWKA: Obsługa różnych formatów pól vehicleInfo
+            const vehicleInfo = payload.vehicleInfo || {};
+            const normalizedVehicleInfo = {
+                make: vehicleInfo.make || '',
+                model: vehicleInfo.model || '',
+                licensePlate: vehicleInfo.licensePlate || vehicleInfo.license_plate || '',
+                vin: vehicleInfo.vin || null
+            };
 
-        this.emit('signature_request', signatureRequest);
+            // Convert to frontend SignatureRequest format
+            const signatureRequest: SignatureRequest = {
+                sessionId: payload.sessionId,
+                workstationId: payload.workstationId || 'unknown',
+                companyId: payload.companyId || this.deviceConfig?.companyId || 2,
+                customerName: payload.customerName,
+                vehicleInfo: normalizedVehicleInfo,
+                serviceType: payload.serviceType || 'Usługa serwisowa',
+                documentId: payload.documentId || 'doc-' + payload.sessionId,
+                documentType: payload.documentType || 'Potwierdzenie wykonania usługi',
+                timestamp: timestamp
+            };
+
+            console.log('Normalized signature request:', signatureRequest);
+
+            // Add notification effects
+            this.playNotificationSound();
+            this.vibrate();
+
+            // POPRAWKA: Emit z odpowiednim typem zdarzenia
+            this.emit('signature_request', signatureRequest);
+
+        } catch (error) {
+            console.error('Error processing signature request:', error);
+            this.emit('error', {
+                code: 'SIGNATURE_REQUEST_ERROR',
+                message: 'Failed to process signature request'
+            });
+        }
     }
 
     private handleSimpleSignatureRequest(payload: any): void {
-        console.log('Simple signature request received:', payload.sessionId);
+        console.log('Simple signature request received:', payload);
 
         // Add notification effects
         this.playNotificationSound();

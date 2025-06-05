@@ -1,4 +1,4 @@
-// src/App.tsx - Updated version
+// src/App.tsx - POPRAWIONA WERSJA
 import { useState, useEffect } from 'react';
 import { DeviceProvider } from './contexts/DeviceContext';
 import { SignatureProvider } from './contexts/SignatureContext';
@@ -25,12 +25,35 @@ function AppContent() {
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const { isInstallable, install } = usePWA();
 
+    // POPRAWKA: Lepsze logowanie do debugowania
+    useEffect(() => {
+        console.log('App state changed:', {
+            deviceConfig: deviceConfig ? 'present' : 'null',
+            deviceStatus,
+            isOnline,
+            signatureRequest: signatureRequest ? signatureRequest.sessionId : 'null',
+            isLoading,
+            connectionError
+        });
+    }, [deviceConfig, deviceStatus, isOnline, signatureRequest, isLoading, connectionError]);
+
     // Handle WebSocket events
     useEffect(() => {
-        if (!deviceConfig) return;
+        if (!deviceConfig) {
+            console.log('No device config, skipping WebSocket event handlers');
+            return;
+        }
+
+        console.log('Setting up WebSocket event handlers for device:', deviceConfig.deviceId);
 
         const unsubscribeSignatureRequest = on('signature_request', (data: SignatureRequest) => {
-            console.log('Signature request received:', data.sessionId);
+            console.log('✅ Signature request received in App:', {
+                sessionId: data.sessionId,
+                customerName: data.customerName,
+                serviceType: data.serviceType,
+                vehicleInfo: data.vehicleInfo
+            });
+
             setSignatureRequest(data);
 
             // Vibrate to notify user
@@ -43,13 +66,13 @@ function AppContent() {
         });
 
         const unsubscribeSimpleSignatureRequest = on('simple_signature_request', (data: any) => {
-            console.log('Simple signature request received:', data.sessionId);
+            console.log('✅ Simple signature request received in App:', data);
 
             // Convert simple signature to regular signature request format
             const signatureRequestData: SignatureRequest = {
                 sessionId: data.sessionId,
                 workstationId: 'simple-' + data.sessionId,
-                companyId: 2,
+                companyId: data.companyId || deviceConfig.companyId,
                 customerName: data.signerName,
                 vehicleInfo: {
                     make: data.businessContext?.vehicleInfo?.make || '',
@@ -74,7 +97,7 @@ function AppContent() {
         });
 
         const unsubscribeConnection = on('connection', (data: any) => {
-            console.log('Connection status:', data.status);
+            console.log('✅ Connection status received in App:', data.status);
 
             if (data.status === 'connected' || data.status === 'authenticated') {
                 setConnectionError(null);
@@ -84,7 +107,7 @@ function AppContent() {
         });
 
         const unsubscribeSessionCancelled = on('session_cancelled', (data: any) => {
-            console.log('Session cancelled:', data.sessionId);
+            console.log('✅ Session cancelled received in App:', data.sessionId);
 
             // If current session is cancelled, clear it
             if (signatureRequest && signatureRequest.sessionId === data.sessionId) {
@@ -93,7 +116,7 @@ function AppContent() {
         });
 
         const unsubscribeSimpleSessionCancelled = on('simple_session_cancelled', (data: any) => {
-            console.log('Simple session cancelled:', data.sessionId);
+            console.log('✅ Simple session cancelled received in App:', data.sessionId);
 
             // If current session is cancelled, clear it
             if (signatureRequest && signatureRequest.sessionId === data.sessionId) {
@@ -102,19 +125,66 @@ function AppContent() {
         });
 
         const unsubscribeError = on('error', (data: any) => {
-            console.error('WebSocket error:', data);
+            console.error('❌ WebSocket error received in App:', data);
             setConnectionError(data.message || 'Wystąpił błąd połączenia');
         });
 
         const unsubscribeAuthenticated = on('authenticated', (data: any) => {
-            console.log('WebSocket authenticated:', data);
+            console.log('✅ WebSocket authenticated in App:', data);
             setConnectionError(null);
         });
 
         const unsubscribeAuthenticationFailed = on('authentication_failed', (data: any) => {
-            console.error('WebSocket authentication failed:', data);
+            console.error('❌ WebSocket authentication failed in App:', data);
             setConnectionError('Błąd uwierzytelnienia urządzenia');
         });
+
+        // POPRAWKA: Dodaj listener na connection_status_changed
+        const unsubscribeConnectionStatusChanged = on('connection_status_changed', (data: any) => {
+            console.log('🔄 Connection status changed in App:', data);
+
+            switch (data.status) {
+                case 'connected':
+                case 'authenticated':
+                    setConnectionError(null);
+                    break;
+                case 'error':
+                    setConnectionError('Błąd połączenia WebSocket');
+                    break;
+                case 'disconnected':
+                    if (!isOnline) {
+                        setConnectionError('Brak połączenia z internetem');
+                    } else {
+                        setConnectionError('Połączenie zostało przerwane');
+                    }
+                    break;
+            }
+        });
+
+        // POPRAWKA: Dodaj ogólny listener do debugowania wszystkich zdarzeń
+        if (ENV.DEBUG_MODE) {
+            const debugUnsubscribers: (() => void)[] = [];
+
+            ['connection', 'error', 'heartbeat', 'admin_message'].forEach(eventType => {
+                const unsubscribe = on(eventType, (data: any) => {
+                    console.log(`🐛 DEBUG - Event '${eventType}':`, data);
+                });
+                debugUnsubscribers.push(unsubscribe);
+            });
+
+            return () => {
+                unsubscribeSignatureRequest();
+                unsubscribeSimpleSignatureRequest();
+                unsubscribeConnection();
+                unsubscribeSessionCancelled();
+                unsubscribeSimpleSessionCancelled();
+                unsubscribeError();
+                unsubscribeAuthenticated();
+                unsubscribeAuthenticationFailed();
+                unsubscribeConnectionStatusChanged();
+                debugUnsubscribers.forEach(unsub => unsub());
+            };
+        }
 
         return () => {
             unsubscribeSignatureRequest();
@@ -125,6 +195,7 @@ function AppContent() {
             unsubscribeError();
             unsubscribeAuthenticated();
             unsubscribeAuthenticationFailed();
+            unsubscribeConnectionStatusChanged();
         };
     }, [on, deviceConfig, signatureRequest]);
 
@@ -132,18 +203,25 @@ function AppContent() {
     useEffect(() => {
         const initializeApp = async () => {
             try {
+                console.log('🚀 Initializing app...');
                 setIsLoading(true);
 
                 // Check if device is configured
                 if (deviceConfig) {
-                    console.log('Device configured:', deviceConfig.deviceId);
+                    console.log('✅ Device configured:', deviceConfig.deviceId);
+                } else {
+                    console.log('⚠️ No device configuration found');
                 }
+
+                // Add a small delay to ensure WebSocket handlers are ready
+                await new Promise(resolve => setTimeout(resolve, 1000));
 
                 // App is ready
                 setIsLoading(false);
+                console.log('✅ App initialization complete');
 
             } catch (error) {
-                console.error('App initialization error:', error);
+                console.error('❌ App initialization error:', error);
                 setConnectionError('Błąd inicjalizacji aplikacji');
                 setIsLoading(false);
             }
@@ -178,7 +256,7 @@ function AppContent() {
     };
 
     const handleSignatureComplete = () => {
-        console.log('Signature completed for session:', signatureRequest?.sessionId);
+        console.log('🎯 Signature completed for session:', signatureRequest?.sessionId);
 
         if (signatureRequest) {
             // Acknowledge completion
@@ -189,7 +267,7 @@ function AppContent() {
     };
 
     const handleSignatureCancel = () => {
-        console.log('Signature cancelled for session:', signatureRequest?.sessionId);
+        console.log('❌ Signature cancelled for session:', signatureRequest?.sessionId);
 
         if (signatureRequest) {
             // Acknowledge cancellation
@@ -262,6 +340,24 @@ function AppContent() {
                     >
                         Spróbuj ponownie
                     </button>
+
+                    {ENV.DEBUG_MODE && (
+                        <div style={{
+                            marginTop: '2rem',
+                            padding: '1rem',
+                            background: '#f3f4f6',
+                            borderRadius: '0.5rem',
+                            fontSize: '0.875rem',
+                            color: '#374151',
+                            maxWidth: '500px'
+                        }}>
+                            <strong>Debug info:</strong><br />
+                            Device Status: {deviceStatus}<br />
+                            Online: {isOnline ? 'Yes' : 'No'}<br />
+                            Device ID: {deviceConfig?.deviceId || 'None'}<br />
+                            Company ID: {deviceConfig?.companyId || 'None'}
+                        </div>
+                    )}
                 </div>
             </Layout>
         );
@@ -276,8 +372,17 @@ function AppContent() {
         );
     }
 
+    // POPRAWKA: Lepsze debugowanie stanu aplikacji
+    console.log('🎯 Current app state decision:', {
+        hasDeviceConfig: !!deviceConfig,
+        deviceStatus,
+        hasSignatureRequest: !!signatureRequest,
+        signatureRequestSessionId: signatureRequest?.sessionId || 'none'
+    });
+
     // Has active signature request - show signature pad
     if (signatureRequest) {
+        console.log('📝 Showing SignaturePad for request:', signatureRequest);
         return (
             <Layout>
                 <SignaturePad
@@ -290,6 +395,7 @@ function AppContent() {
     }
 
     // Idle state - waiting for signature requests
+    console.log('⏳ Showing IdleScreen - waiting for signature requests');
     return (
         <Layout>
             <IdleScreen
