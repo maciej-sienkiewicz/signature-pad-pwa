@@ -17,10 +17,3 @@ export interface SignatureRequest {
     // Additional fields that might come from backend
     additionalNotes?: string;
 }
-
-export interface SignatureData {
-    sessionId: string;
-    signatureImage: string; // base64
-    signedAt: string;
-    deviceId: string;
-}

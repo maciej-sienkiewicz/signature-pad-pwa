@@ -29,7 +29,6 @@ function AppContent() {
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const { isInstallable, install } = usePWA();
 
-    // POPRAWKA: Lepsze logowanie do debugowania
     useEffect(() => {
         console.log('App state changed:', {
             deviceConfig: deviceConfig ? 'present' : 'null',

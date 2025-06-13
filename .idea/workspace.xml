@@ -4,14 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="commit dziala ale nie ma podpisu">
-      <change afterPath="$PROJECT_DIR$/src/api/endpoints/protocol-signature.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.module.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/types/protocol-signature.types.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="signature dziala ale nie wysyla i nie podlgada">
       <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/protocol-signature.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/protocol-signature.types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/signature.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/signature.types.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/types/simple-signature.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/simple-signature.types.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,7 +59,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-f27c65a3e318-JavaScript-WS-251.23774.424" />
+        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-WS-251.25410.117" />
       </set>
     </attachedChunks>
   </component>
@@ -74,6 +71,7 @@
       <option name="presentableId" value="Default" />
       <updated>1748635896029</updated>
       <workItem from="1748635897145" duration="14281000" />
+      <workItem from="1749840173020" duration="1011000" />
     </task>
     <task id="LOCAL-00001" summary="init">
       <option name="closed" value="true" />
@@ -139,7 +137,15 @@
       <option name="project" value="LOCAL" />
       <updated>1749134544810</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="signature dziala ale nie wysyla i nie podlgada">
+      <option name="closed" value="true" />
+      <created>1749841274581</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1749841274581</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -153,7 +159,8 @@
     <MESSAGE value="CHECKPOINT" />
     <MESSAGE value="test" />
     <MESSAGE value="commit dziala ale nie ma podpisu" />
-    <option name="LAST_COMMIT_MESSAGE" value="commit dziala ale nie ma podpisu" />
+    <MESSAGE value="signature dziala ale nie wysyla i nie podlgada" />
+    <option name="LAST_COMMIT_MESSAGE" value="signature dziala ale nie wysyla i nie podlgada" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

@@ -16,9 +16,6 @@ export interface TenantBranding {
     welcomeMessage?: string;
 }
 
-// Keep TenantBranding name for backwards compatibility even though it's now company-based
-export type CompanyBranding = TenantBranding;
-
 export enum DeviceStatus {
     DISCONNECTED = 'DISCONNECTED',
     CONNECTING = 'CONNECTING',

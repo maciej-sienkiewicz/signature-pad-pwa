@@ -28,7 +28,6 @@
   },
   "include": [
     "src",
-    "src/types/experimental.d.ts"
   ],
   "exclude": [
     "node_modules",
