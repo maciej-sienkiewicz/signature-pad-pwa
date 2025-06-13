@@ -1,4 +1,4 @@
-// src/App.tsx - POPRAWIONA WERSJA
+// src/App.tsx - POPRAWIONA WERSJA (Fixed TypeScript errors)
 import { useState, useEffect } from 'react';
 import { DeviceProvider } from './contexts/DeviceContext';
 import { SignatureProvider } from './contexts/SignatureContext';
@@ -16,11 +16,15 @@ import { ENV } from './config/environment';
 import './styles/globals.css';
 import './styles/variables.css';
 import './styles/animations.css';
+import ProtocolSignaturePad from './components/ProtocolSignaturePad/ProtocolSignaturePad';
+import { ProtocolSignatureRequest } from './types/protocol-signature.types';
+import { tabletWebSocketHandler } from "./services/TabletWebSocketHandler";
 
 function AppContent() {
     const { deviceConfig, deviceStatus, isOnline } = useDevice();
     const { on, acknowledgeSignatureCompletion } = useWebSocket();
     const [signatureRequest, setSignatureRequest] = useState<SignatureRequest | null>(null);
+    const [protocolSignatureRequest, setProtocolSignatureRequest] = useState<ProtocolSignatureRequest | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [connectionError, setConnectionError] = useState<string | null>(null);
     const { isInstallable, install } = usePWA();
@@ -32,10 +36,11 @@ function AppContent() {
             deviceStatus,
             isOnline,
             signatureRequest: signatureRequest ? signatureRequest.sessionId : 'null',
+            protocolSignatureRequest: protocolSignatureRequest ? protocolSignatureRequest.sessionId : 'null',
             isLoading,
             connectionError
         });
-    }, [deviceConfig, deviceStatus, isOnline, signatureRequest, isLoading, connectionError]);
+    }, [deviceConfig, deviceStatus, isOnline, signatureRequest, protocolSignatureRequest, isLoading, connectionError]);
 
     // Handle WebSocket events
     useEffect(() => {
@@ -45,6 +50,36 @@ function AppContent() {
         }
 
         console.log('Setting up WebSocket event handlers for device:', deviceConfig.deviceId);
+
+        const unsubscribeDocumentSignatureRequest = on('document_signature_request', (data: ProtocolSignatureRequest) => {
+            console.log('✅ Document signature request received in App:', {
+                sessionId: data.sessionId,
+                documentTitle: data.documentTitle,
+                signerName: data.signerName,
+                documentType: data.documentType,
+                protocolId: data.businessContext?.protocolId
+            });
+
+            setProtocolSignatureRequest(data);
+
+            // Vibrate to notify user
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200, 100, 200]);
+            }
+
+            // Play notification sound
+            playNotificationSound();
+        });
+
+        // NOWY HANDLER dla anulowania sesji protokołów
+        const unsubscribeDocumentSessionCancelled = on('document_session_cancelled', (data: any) => {
+            console.log('✅ Document session cancelled received in App:', data.sessionId);
+
+            // If current protocol session is cancelled, clear it
+            if (protocolSignatureRequest && protocolSignatureRequest.sessionId === data.sessionId) {
+                setProtocolSignatureRequest(null);
+            }
+        });
 
         const unsubscribeSignatureRequest = on('signature_request', (data: SignatureRequest) => {
             console.log('✅ Signature request received in App:', {
@@ -182,6 +217,8 @@ function AppContent() {
                 unsubscribeAuthenticated();
                 unsubscribeAuthenticationFailed();
                 unsubscribeConnectionStatusChanged();
+                unsubscribeDocumentSignatureRequest();
+                unsubscribeDocumentSessionCancelled();
                 debugUnsubscribers.forEach(unsub => unsub());
             };
         }
@@ -196,8 +233,32 @@ function AppContent() {
             unsubscribeAuthenticated();
             unsubscribeAuthenticationFailed();
             unsubscribeConnectionStatusChanged();
+            unsubscribeDocumentSignatureRequest();
+            unsubscribeDocumentSessionCancelled();
         };
-    }, [on, deviceConfig, signatureRequest]);
+    }, [on, deviceConfig, signatureRequest, protocolSignatureRequest]);
+
+    const handleProtocolSignatureComplete = () => {
+        console.log('🎯 Protocol signature completed for session:', protocolSignatureRequest?.sessionId);
+
+        if (protocolSignatureRequest) {
+            // Acknowledge completion using the new method for documents
+            tabletWebSocketHandler.acknowledgeDocumentSignatureCompletion(protocolSignatureRequest.sessionId, true);
+        }
+
+        setProtocolSignatureRequest(null);
+    };
+
+    const handleProtocolSignatureCancel = () => {
+        console.log('❌ Protocol signature cancelled for session:', protocolSignatureRequest?.sessionId);
+
+        if (protocolSignatureRequest) {
+            // Acknowledge cancellation using the new method for documents
+            tabletWebSocketHandler.acknowledgeDocumentSignatureCompletion(protocolSignatureRequest.sessionId, false);
+        }
+
+        setProtocolSignatureRequest(null);
+    };
 
     // Initialize app
     useEffect(() => {
@@ -277,6 +338,35 @@ function AppContent() {
         setSignatureRequest(null);
     };
 
+    // POPRAWKA: Najpierw sprawdź protokoły, potem zwykłe podpisy
+    // Ma to znaczenie dla TypeScript i logiki aplikacji
+    if (protocolSignatureRequest) {
+        console.log('📋 Showing ProtocolSignaturePad for request:', protocolSignatureRequest);
+        return (
+            <Layout>
+                <ProtocolSignaturePad
+                    request={protocolSignatureRequest}
+                    onComplete={handleProtocolSignatureComplete}
+                    onCancel={handleProtocolSignatureCancel}
+                />
+            </Layout>
+        );
+    }
+
+    // Has active signature request - show signature pad
+    if (signatureRequest) {
+        console.log('📝 Showing SignaturePad for request:', signatureRequest);
+        return (
+            <Layout>
+                <SignaturePad
+                    request={signatureRequest}
+                    onComplete={handleSignatureComplete}
+                    onCancel={handleSignatureCancel}
+                />
+            </Layout>
+        );
+    }
+
     // Show loading screen during initialization
     if (isLoading) {
         return (
@@ -355,7 +445,7 @@ function AppContent() {
                             Device Status: {deviceStatus}<br />
                             Online: {isOnline ? 'Yes' : 'No'}<br />
                             Device ID: {deviceConfig?.deviceId || 'None'}<br />
-                            Company ID: {deviceConfig?.companyId || 'None'}
+                            Company ID: {deviceConfig?.companyId || 'None'}<br />
                         </div>
                     )}
                 </div>
@@ -368,28 +458,6 @@ function AppContent() {
         return (
             <Layout>
                 <PairingScreen />
-            </Layout>
-        );
-    }
-
-    // POPRAWKA: Lepsze debugowanie stanu aplikacji
-    console.log('🎯 Current app state decision:', {
-        hasDeviceConfig: !!deviceConfig,
-        deviceStatus,
-        hasSignatureRequest: !!signatureRequest,
-        signatureRequestSessionId: signatureRequest?.sessionId || 'none'
-    });
-
-    // Has active signature request - show signature pad
-    if (signatureRequest) {
-        console.log('📝 Showing SignaturePad for request:', signatureRequest);
-        return (
-            <Layout>
-                <SignaturePad
-                    request={signatureRequest}
-                    onComplete={handleSignatureComplete}
-                    onCancel={handleSignatureCancel}
-                />
             </Layout>
         );
     }

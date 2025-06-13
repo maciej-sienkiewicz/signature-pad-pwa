@@ -1,14 +1,16 @@
-// src/services/TabletWebSocketHandler.ts - POPRAWIONA WERSJA
+// src/services/TabletWebSocketHandler.ts - KOMPLETNA WERSJA
 import { DeviceConfig } from '../types/device.types';
 import { SignatureRequest } from '../types/signature.types';
+import { ProtocolSignatureRequest } from '../types/protocol-signature.types';
 import { ENV } from '../config/environment';
+import { APP_CONFIG } from '../config/constants';
 
 export type WebSocketMessage = {
     type: string;
     payload: any;
 };
 
-export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'authenticated' | 'error';
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error' | 'authenticated';
 
 export class TabletWebSocketHandler {
     private ws: WebSocket | null = null;
@@ -21,9 +23,6 @@ export class TabletWebSocketHandler {
     private lastHeartbeat: number = 0;
     private isIntentionalDisconnect = false;
     private authenticationSent = false;
-    private maxReconnectAttempts = 10;
-    private reconnectInterval = 3000;
-    private heartbeatIntervalMs = 30000;
 
     connect(deviceConfig: DeviceConfig): void {
         if (this.connectionStatus === 'connected' || this.connectionStatus === 'connecting') {
@@ -118,12 +117,24 @@ export class TabletWebSocketHandler {
                     this.handleSimpleSignatureRequest(message.payload);
                     break;
 
+                case 'document_signature_request':
+                    this.handleDocumentSignatureRequest(message.payload);
+                    break;
+
                 case 'connection':
                     this.handleConnectionMessage(message.payload);
                     break;
 
                 case 'session_cancelled':
                     this.handleSessionCancelled(message.payload);
+                    break;
+
+                case 'simple_session_cancelled':
+                    this.handleSimpleSessionCancelled(message.payload);
+                    break;
+
+                case 'document_session_cancelled':
+                    this.handleDocumentSessionCancelled(message.payload);
                     break;
 
                 case 'admin_message':
@@ -173,7 +184,6 @@ export class TabletWebSocketHandler {
         }
     }
 
-    // POPRAWIONA FUNKCJA - główny fix
     private handleSignatureRequest(payload: any): void {
         console.log('Signature request received:', payload);
 
@@ -184,7 +194,7 @@ export class TabletWebSocketHandler {
         }
 
         try {
-            // POPRAWKA: Konwertuj timestamp z Unix timestamp do ISO string jeśli potrzeba
+            // Convert timestamp from Unix timestamp to ISO string if needed
             let timestamp = payload.timestamp;
             if (typeof timestamp === 'number') {
                 timestamp = new Date(timestamp * 1000).toISOString();
@@ -192,7 +202,7 @@ export class TabletWebSocketHandler {
                 timestamp = new Date().toISOString();
             }
 
-            // POPRAWKA: Obsługa różnych formatów pól vehicleInfo
+            // Handle different formats of vehicleInfo fields
             const vehicleInfo = payload.vehicleInfo || {};
             const normalizedVehicleInfo = {
                 make: vehicleInfo.make || '',
@@ -220,7 +230,7 @@ export class TabletWebSocketHandler {
             this.playNotificationSound();
             this.vibrate();
 
-            // POPRAWKA: Emit z odpowiednim typem zdarzenia
+            // Emit with appropriate event type
             this.emit('signature_request', signatureRequest);
 
         } catch (error) {
@@ -242,6 +252,52 @@ export class TabletWebSocketHandler {
         this.emit('simple_signature_request', payload);
     }
 
+    private handleDocumentSignatureRequest(payload: any): void {
+        console.log('Document signature request received:', payload);
+
+        // Validate document signature request
+        if (!payload.sessionId || !payload.signerName || !payload.documentTitle) {
+            console.error('Invalid document signature request received:', payload);
+            return;
+        }
+
+        try {
+            // Convert to frontend ProtocolSignatureRequest format
+            const protocolSignatureRequest: ProtocolSignatureRequest = {
+                sessionId: payload.sessionId,
+                documentId: payload.documentId || 'unknown',
+                companyId: payload.companyId || this.deviceConfig?.companyId || 1,
+                signerName: payload.signerName,
+                signatureTitle: payload.signatureTitle || 'Podpis protokołu',
+                documentTitle: payload.documentTitle,
+                documentType: payload.documentType || 'PROTOCOL',
+                pageCount: payload.pageCount || 1,
+                previewUrls: payload.previewUrls || [],
+                instructions: payload.instructions,
+                businessContext: payload.businessContext,
+                timeoutMinutes: payload.timeoutMinutes || 15,
+                expiresAt: payload.expiresAt || new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+                signatureFields: payload.signatureFields
+            };
+
+            console.log('Normalized document signature request:', protocolSignatureRequest);
+
+            // Add notification effects
+            this.playNotificationSound();
+            this.vibrate();
+
+            // Emit the protocol signature request
+            this.emit('document_signature_request', protocolSignatureRequest);
+
+        } catch (error) {
+            console.error('Error processing document signature request:', error);
+            this.emit('error', {
+                code: 'DOCUMENT_SIGNATURE_REQUEST_ERROR',
+                message: 'Failed to process document signature request'
+            });
+        }
+    }
+
     private handleConnectionMessage(payload: any): void {
         console.log('Connection status update:', payload.status);
         this.emit('connection', payload);
@@ -250,6 +306,16 @@ export class TabletWebSocketHandler {
     private handleSessionCancelled(payload: any): void {
         console.log('Session cancelled:', payload.sessionId);
         this.emit('session_cancelled', payload);
+    }
+
+    private handleSimpleSessionCancelled(payload: any): void {
+        console.log('Simple session cancelled:', payload.sessionId);
+        this.emit('simple_session_cancelled', payload);
+    }
+
+    private handleDocumentSessionCancelled(payload: any): void {
+        console.log('Document session cancelled:', payload.sessionId);
+        this.emit('document_session_cancelled', payload);
     }
 
     private handleAdminMessage(payload: any): void {
@@ -312,7 +378,7 @@ export class TabletWebSocketHandler {
             return;
         }
 
-        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+        if (this.reconnectAttempts >= APP_CONFIG.WS_MAX_RECONNECT_ATTEMPTS) {
             console.error('Max reconnection attempts reached');
             this.setConnectionStatus('error');
             this.emit('connection', { status: 'failed' });
@@ -321,7 +387,7 @@ export class TabletWebSocketHandler {
 
         this.reconnectAttempts++;
         const delay = Math.min(
-            this.reconnectInterval * Math.pow(2, this.reconnectAttempts - 1),
+            APP_CONFIG.WS_RECONNECT_INTERVAL * Math.pow(2, this.reconnectAttempts - 1),
             30000
         );
 
@@ -347,12 +413,12 @@ export class TabletWebSocketHandler {
 
                 // Check if server is responding to heartbeats
                 const now = Date.now();
-                if (this.lastHeartbeat > 0 && (now - this.lastHeartbeat) > this.heartbeatIntervalMs * 3) {
+                if (this.lastHeartbeat > 0 && (now - this.lastHeartbeat) > APP_CONFIG.WS_HEARTBEAT_INTERVAL * 3) {
                     console.warn('Server not responding to heartbeats, connection may be stale');
                     this.ws?.close(1000, 'Heartbeat timeout');
                 }
             }
-        }, this.heartbeatIntervalMs);
+        }, APP_CONFIG.WS_HEARTBEAT_INTERVAL);
 
         console.log('Heartbeat started');
     }
@@ -418,7 +484,7 @@ export class TabletWebSocketHandler {
                 console.error('Failed to send WebSocket message:', error);
             }
         } else {
-            console.warn(`WebSocket is not connected, cannot send message:`, message.type);
+            console.warn(`WebSocket is not connected (readyState: ${this.ws?.readyState}), cannot send message:`, message.type);
         }
     }
 
@@ -428,6 +494,7 @@ export class TabletWebSocketHandler {
         }
         this.listeners.get(event)!.add(callback);
 
+        // Return unsubscribe function
         return () => this.off(event, callback);
     }
 
@@ -456,10 +523,58 @@ export class TabletWebSocketHandler {
             sessionId,
             success,
             timestamp: new Date().toISOString(),
-            deviceId: this.deviceConfig?.deviceId
+            deviceId: this.deviceConfig?.deviceId,
+            companyId: this.deviceConfig?.companyId
         });
 
         console.log('Signature completion acknowledged:', { sessionId, success });
+    }
+
+    /**
+     * Acknowledge document signature completion
+     */
+    acknowledgeDocumentSignatureCompletion(sessionId: string, success: boolean): void {
+        this.send('document_signature_completed', {
+            sessionId,
+            success,
+            timestamp: new Date().toISOString(),
+            deviceId: this.deviceConfig?.deviceId,
+            companyId: this.deviceConfig?.companyId
+        });
+
+        console.log('Document signature completion acknowledged:', { sessionId, success });
+    }
+
+    /**
+     * Send document viewing status update
+     */
+    sendDocumentViewingStatus(sessionId: string, status: string): void {
+        this.send('document_viewing_status', {
+            sessionId,
+            status,
+            timestamp: new Date().toISOString(),
+            deviceId: this.deviceConfig?.deviceId
+        });
+
+        if (ENV.DEBUG_MODE) {
+            console.log('Document viewing status sent:', { sessionId, status });
+        }
+    }
+
+    /**
+     * Send signature placement information
+     */
+    sendSignaturePlacement(sessionId: string, placement: any): void {
+        this.send('signature_placement', {
+            sessionId,
+            placement,
+            timestamp: new Date().toISOString(),
+            deviceId: this.deviceConfig?.deviceId
+        });
+
+        if (ENV.DEBUG_MODE) {
+            console.log('Signature placement sent:', { sessionId, placement });
+        }
     }
 
     /**
@@ -471,7 +586,8 @@ export class TabletWebSocketHandler {
             orientation: this.getOrientation(),
             isActive: true,
             timestamp: new Date().toISOString(),
-            deviceId: this.deviceConfig?.deviceId
+            deviceId: this.deviceConfig?.deviceId,
+            companyId: this.deviceConfig?.companyId
         };
 
         this.send('tablet_status', status);
@@ -482,8 +598,7 @@ export class TabletWebSocketHandler {
     }
 
     private getBatteryLevel(): number | null {
-        // This would require the Battery API which is deprecated
-        // Return null for now
+        // Battery API is deprecated, return null for now
         return null;
     }
 
@@ -525,6 +640,36 @@ export class TabletWebSocketHandler {
      */
     getReadyState(): number | null {
         return this.ws?.readyState || null;
+    }
+
+    /**
+     * Get device configuration
+     */
+    getDeviceConfig(): DeviceConfig | null {
+        return this.deviceConfig;
+    }
+
+    /**
+     * Get connection statistics
+     */
+    getConnectionStats(): {
+        status: ConnectionStatus;
+        reconnectAttempts: number;
+        lastHeartbeat: number;
+        isAuthenticated: boolean;
+        readyState: number | null;
+        deviceId: string | null;
+        companyId: number | null;
+    } {
+        return {
+            status: this.connectionStatus,
+            reconnectAttempts: this.reconnectAttempts,
+            lastHeartbeat: this.lastHeartbeat,
+            isAuthenticated: this.isAuthenticated(),
+            readyState: this.getReadyState(),
+            deviceId: this.deviceConfig?.deviceId || null,
+            companyId: this.deviceConfig?.companyId || null
+        };
     }
 
     /**

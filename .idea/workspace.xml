@@ -5,9 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="commit dziala ale nie ma podpisu">
+      <change afterPath="$PROJECT_DIR$/src/api/endpoints/protocol-signature.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.module.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/types/protocol-signature.types.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hooks/useWebSocket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/useWebSocket.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -162,7 +165,6 @@
         <line-breakpoint enabled="true" type="javascript">
           <url>file://$PROJECT_DIR$/src/api/endpoints/signature.ts</url>
           <line>1</line>
-          <properties lambdaOrdinal="-1" />
           <option name="timeStamp" value="4" />
         </line-breakpoint>
       </breakpoints>
