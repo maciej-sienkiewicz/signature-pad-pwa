@@ -261,8 +261,38 @@ export class TabletWebSocketHandler {
             return;
         }
 
+        // WALIDACJA dokumentu przesłanego przez WebSocket
+        if (!payload.documentData) {
+            console.error('Document data missing in signature request');
+            this.emit('error', {
+                code: 'DOCUMENT_MISSING',
+                message: 'Document data not provided in signature request'
+            });
+            return;
+        }
+
+        // Sprawdź rozmiar dokumentu (max 10MB)
+        if (payload.documentSize && payload.documentSize > 10 * 1024 * 1024) {
+            console.error('Document too large:', payload.documentSize);
+            this.emit('error', {
+                code: 'DOCUMENT_TOO_LARGE',
+                message: 'Document size exceeds maximum limit'
+            });
+            return;
+        }
+
+        // Sprawdź czy to prawdziwy base64 PDF
+        if (!payload.documentData.startsWith('data:application/pdf;base64,')) {
+            console.error('Invalid document format - not a base64 PDF');
+            this.emit('error', {
+                code: 'INVALID_DOCUMENT_FORMAT',
+                message: 'Document must be a base64 encoded PDF'
+            });
+            return;
+        }
+
         try {
-            // Convert to frontend ProtocolSignatureRequest format
+            // Convert to frontend ProtocolSignatureRequest format z dokumentem
             const protocolSignatureRequest: ProtocolSignatureRequest = {
                 sessionId: payload.sessionId,
                 documentId: payload.documentId || 'unknown',
@@ -272,21 +302,33 @@ export class TabletWebSocketHandler {
                 documentTitle: payload.documentTitle,
                 documentType: payload.documentType || 'PROTOCOL',
                 pageCount: payload.pageCount || 1,
-                previewUrls: payload.previewUrls || [],
+                previewUrls: payload.previewUrls || [], // Deprecated - nie potrzebne z WebSocket
                 instructions: payload.instructions,
                 businessContext: payload.businessContext,
                 timeoutMinutes: payload.timeoutMinutes || 15,
                 expiresAt: payload.expiresAt || new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-                signatureFields: payload.signatureFields
+                signatureFields: payload.signatureFields,
+
+                // NOWE POLA - dokument przesłany w WebSocket message
+                documentData: payload.documentData,        // Base64 PDF z serwera
+                documentSize: payload.documentSize || 0,   // Rozmiar w bytes
+                documentHash: payload.documentHash         // Optional hash dla weryfikacji
             };
 
-            console.log('Normalized document signature request:', protocolSignatureRequest);
+            console.log('Normalized document signature request:', {
+                sessionId: protocolSignatureRequest.sessionId,
+                documentTitle: protocolSignatureRequest.documentTitle,
+                documentSize: protocolSignatureRequest.documentSize,
+                hasDocument: !!protocolSignatureRequest.documentData,
+                documentHash: protocolSignatureRequest.documentHash ?
+                    protocolSignatureRequest.documentHash.substring(0, 16) + '...' : 'none'
+            });
 
             // Add notification effects
             this.playNotificationSound();
             this.vibrate();
 
-            // Emit the protocol signature request
+            // Emit the protocol signature request z dokumentem
             this.emit('document_signature_request', protocolSignatureRequest);
 
         } catch (error) {

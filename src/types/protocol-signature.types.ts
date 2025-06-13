@@ -1,4 +1,5 @@
-// src/types/protocol-signature.types.ts
+// src/types/protocol-signature.types.ts - ROZSZERZONA WERSJA
+
 export interface ProtocolSignatureRequest {
     sessionId: string;
     documentId: string;
@@ -8,7 +9,7 @@ export interface ProtocolSignatureRequest {
     documentTitle: string;
     documentType: string;
     pageCount: number;
-    previewUrls: string[];
+    previewUrls: string[]; // Usuń to - nie potrzebne
     instructions?: string;
     businessContext?: {
         protocolId: number;
@@ -19,6 +20,11 @@ export interface ProtocolSignatureRequest {
     timeoutMinutes: number;
     expiresAt: string;
     signatureFields?: SignatureFieldDefinition[];
+
+    // NOWE POLA dla dokumentu
+    documentData: string; // Base64 encoded PDF
+    documentSize: number; // Size in bytes for validation
+    documentHash?: string; // Optional hash for verification
 }
 
 export interface SignatureFieldDefinition {

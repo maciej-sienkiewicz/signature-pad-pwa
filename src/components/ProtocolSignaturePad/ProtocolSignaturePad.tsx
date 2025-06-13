@@ -1,5 +1,5 @@
+// ProtocolSignaturePad.tsx - NOWA WERSJA bez HTTP calls
 
-// src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx
 import { useState, useRef, useEffect } from 'react';
 import SignatureCanvas from '../SignaturePad/SignatureCanvas';
 import { ProtocolSignatureRequest } from '../../types/protocol-signature.types';
@@ -22,6 +22,7 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
     const [documentViewed, setDocumentViewed] = useState(false);
     const [showDocument, setShowDocument] = useState(false);
     const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+    const [documentLoaded, setDocumentLoaded] = useState(false);
     const canvasRef = useRef<any>(null);
     const { deviceConfig } = useDevice();
 
@@ -41,34 +42,107 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
         return () => clearInterval(timer);
     }, []);
 
-    // Load document on mount
+    // NOWE: Load document from WebSocket request data
     useEffect(() => {
-        loadDocument();
-    }, []);
+        loadDocumentFromRequest();
+    }, [request]);
+
+    // Cleanup URL when component unmounts
+    useEffect(() => {
+        return () => {
+            if (documentUrl) {
+                URL.revokeObjectURL(documentUrl);
+                console.log('🧹 Document URL revoked on cleanup');
+            }
+        };
+    }, [documentUrl]);
+
+    /**
+     * NOWA METODA: Load document from WebSocket request data
+     */
+    const loadDocumentFromRequest = async () => {
+        try {
+            console.log('🔄 Loading document from WebSocket request data:', {
+                sessionId: request.sessionId,
+                hasDocumentData: !!request.documentData,
+                documentSize: request.documentSize
+            });
+
+            if (!request.documentData) {
+                setError('Dokument nie został przesłany w żądaniu');
+                return;
+            }
+
+            // Validate document data format
+            if (!request.documentData.startsWith('data:application/pdf;base64,')) {
+                setError('Nieprawidłowy format dokumentu - wymagany PDF');
+                return;
+            }
+
+            // Validate document size
+            if (request.documentSize && request.documentSize > 10 * 1024 * 1024) {
+                setError('Dokument jest zbyt duży (max 10MB)');
+                return;
+            }
+
+            // Convert base64 to blob
+            try {
+                const base64Data = request.documentData.split(',')[1];
+                const binaryData = atob(base64Data);
+                const uint8Array = new Uint8Array(binaryData.length);
+
+                for (let i = 0; i < binaryData.length; i++) {
+                    uint8Array[i] = binaryData.charCodeAt(i);
+                }
+
+                const blob = new Blob([uint8Array], { type: 'application/pdf' });
+
+                console.log('✅ Document blob created:', {
+                    size: blob.size,
+                    type: blob.type,
+                    expectedSize: request.documentSize
+                });
+
+                // Verify size matches
+                if (request.documentSize && Math.abs(blob.size - (binaryData.length)) > 100) {
+                    console.warn('⚠️ Document size mismatch:', {
+                        expected: request.documentSize,
+                        actual: blob.size,
+                        binaryLength: binaryData.length
+                    });
+                }
+
+                // Create URL for PDF viewer
+                const url = URL.createObjectURL(blob);
+                setDocumentUrl(url);
+                setDocumentLoaded(true);
+
+                console.log('✅ Document loaded successfully from WebSocket data');
+
+                // Notify server about document loading
+                if (deviceConfig) {
+                    ProtocolSignatureAPI.acknowledgeDocumentViewing(request.sessionId, 'DOCUMENT_LOADED');
+                }
+
+            } catch (conversionError) {
+                console.error('❌ Failed to convert base64 to blob:', conversionError);
+                setError('Błąd podczas przetwarzania dokumentu');
+            }
+
+        } catch (error) {
+            console.error('❌ Error loading document from request:', error);
+            setError('Wystąpił błąd podczas ładowania dokumentu');
+        }
+    };
 
     // Notify server about document viewing
     useEffect(() => {
-        if (deviceConfig && !documentViewed) {
-            // Notify that viewing has started
-            ProtocolSignatureAPI.acknowledgeDocumentViewing(request.sessionId, 'VIEWING_STARTED');
+        if (deviceConfig && documentLoaded && !documentViewed) {
+            // Notify that document is ready for viewing
+            ProtocolSignatureAPI.acknowledgeDocumentViewing(request.sessionId, 'DOCUMENT_READY');
             setDocumentViewed(true);
         }
-    }, [request.sessionId, deviceConfig, documentViewed]);
-
-    const loadDocument = async () => {
-        try {
-            const response = await ProtocolSignatureAPI.downloadProtocolDocument(request.sessionId);
-            if (response.success && response.data) {
-                const url = URL.createObjectURL(response.data);
-                setDocumentUrl(url);
-            } else {
-                setError('Nie można pobrać dokumentu protokołu');
-            }
-        } catch (error) {
-            console.error('Error loading protocol document:', error);
-            setError('Błąd podczas ładowania dokumentu');
-        }
-    };
+    }, [request.sessionId, deviceConfig, documentLoaded, documentViewed]);
 
     const handleTimeout = () => {
         setError('Sesja wygasła. Czas na złożenie podpisu minął.');
@@ -84,12 +158,14 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
     };
 
     const handleViewDocument = () => {
-        if (documentUrl) {
+        if (documentUrl && documentLoaded) {
             setShowDocument(true);
             // Notify server that document viewing started
             if (deviceConfig) {
                 ProtocolSignatureAPI.acknowledgeDocumentViewing(request.sessionId, 'DOCUMENT_OPENED');
             }
+        } else {
+            setError('Dokument nie jest jeszcze gotowy do wyświetlenia');
         }
     };
 
@@ -140,8 +216,8 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
             // Prepare signature placement (default to bottom right)
             const signaturePlacement = {
                 page: 1,
-                x: 400, // Adjust based on your document layout
-                y: 700, // Adjust based on your document layout
+                x: 400,
+                y: 700,
                 width: 200,
                 height: 60
             };
@@ -270,14 +346,21 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
                         <button
                             onClick={handleViewDocument}
                             className={styles.viewDocumentButton}
-                            disabled={!documentUrl}
+                            disabled={!documentLoaded}
                         >
-                            {documentUrl ? 'Pokaż dokument' : 'Ładowanie dokumentu...'}
+                            {documentLoaded ? 'Pokaż dokument' : 'Ładowanie dokumentu...'}
                         </button>
                         {documentViewed && (
                             <span className={styles.viewedIndicator}>✓ Dokument przejrzany</span>
                         )}
                     </div>
+
+                    {/* Show document info */}
+                    {documentLoaded && (
+                        <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
+                            Dokument załadowany ({request.documentSize ? `${Math.round(request.documentSize / 1024)} KB` : 'nieznany rozmiar'})
+                        </div>
+                    )}
                 </div>
 
                 {error && (
@@ -315,7 +398,7 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
                     <button
                         onClick={handleSubmit}
                         className={styles.submitButton}
-                        disabled={isSubmitting || timeLeft === 0}
+                        disabled={isSubmitting || timeLeft === 0 || !documentLoaded}
                     >
                         {isSubmitting ? 'Wysyłanie...' : 'Zatwierdź podpis'}
                     </button>

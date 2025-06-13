@@ -5,10 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="signature dziala ale nie wysyla i nie podlgada">
-      <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/types/protocol-signature.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/protocol-signature.types.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/signature.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/signature.types.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/types/simple-signature.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/simple-signature.types.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
