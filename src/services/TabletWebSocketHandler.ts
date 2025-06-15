@@ -253,17 +253,17 @@ export class TabletWebSocketHandler {
     }
 
     private handleDocumentSignatureRequest(payload: any): void {
-        console.log('Document signature request received:', payload);
+        console.log('📋 Document signature request received:', payload);
 
-        // Validate document signature request
+        // Walidacja podstawowych pól
         if (!payload.sessionId || !payload.signerName || !payload.documentTitle) {
-            console.error('Invalid document signature request received:', payload);
+            console.error('❌ Invalid document signature request received:', payload);
             return;
         }
 
-        // WALIDACJA dokumentu przesłanego przez WebSocket
+        // NOWA LOGIKA - sprawdź czy dokument został przesłany
         if (!payload.documentData) {
-            console.error('Document data missing in signature request');
+            console.error('❌ Document data missing in signature request');
             this.emit('error', {
                 code: 'DOCUMENT_MISSING',
                 message: 'Document data not provided in signature request'
@@ -273,7 +273,7 @@ export class TabletWebSocketHandler {
 
         // Sprawdź rozmiar dokumentu (max 10MB)
         if (payload.documentSize && payload.documentSize > 10 * 1024 * 1024) {
-            console.error('Document too large:', payload.documentSize);
+            console.error('❌ Document too large:', payload.documentSize);
             this.emit('error', {
                 code: 'DOCUMENT_TOO_LARGE',
                 message: 'Document size exceeds maximum limit'
@@ -281,9 +281,9 @@ export class TabletWebSocketHandler {
             return;
         }
 
-        // Sprawdź czy to prawdziwy base64 PDF
+        // Sprawdź format dokumentu
         if (!payload.documentData.startsWith('data:application/pdf;base64,')) {
-            console.error('Invalid document format - not a base64 PDF');
+            console.error('❌ Invalid document format - not a base64 PDF');
             this.emit('error', {
                 code: 'INVALID_DOCUMENT_FORMAT',
                 message: 'Document must be a base64 encoded PDF'
@@ -292,7 +292,7 @@ export class TabletWebSocketHandler {
         }
 
         try {
-            // Convert to frontend ProtocolSignatureRequest format z dokumentem
+            // Konwertuj do formatu frontend z dokumentem
             const protocolSignatureRequest: ProtocolSignatureRequest = {
                 sessionId: payload.sessionId,
                 documentId: payload.documentId || 'unknown',
@@ -302,20 +302,20 @@ export class TabletWebSocketHandler {
                 documentTitle: payload.documentTitle,
                 documentType: payload.documentType || 'PROTOCOL',
                 pageCount: payload.pageCount || 1,
-                previewUrls: payload.previewUrls || [], // Deprecated - nie potrzebne z WebSocket
+                previewUrls: payload.previewUrls || [],
                 instructions: payload.instructions,
                 businessContext: payload.businessContext,
                 timeoutMinutes: payload.timeoutMinutes || 15,
                 expiresAt: payload.expiresAt || new Date(Date.now() + 15 * 60 * 1000).toISOString(),
                 signatureFields: payload.signatureFields,
 
-                // NOWE POLA - dokument przesłany w WebSocket message
+                // KLUCZOWE - dokument przesłany w WebSocket message
                 documentData: payload.documentData,        // Base64 PDF z serwera
                 documentSize: payload.documentSize || 0,   // Rozmiar w bytes
-                documentHash: payload.documentHash         // Optional hash dla weryfikacji
+                documentHash: payload.documentHash         // Opcjonalny hash
             };
 
-            console.log('Normalized document signature request:', {
+            console.log('✅ Normalized document signature request:', {
                 sessionId: protocolSignatureRequest.sessionId,
                 documentTitle: protocolSignatureRequest.documentTitle,
                 documentSize: protocolSignatureRequest.documentSize,
@@ -324,15 +324,15 @@ export class TabletWebSocketHandler {
                     protocolSignatureRequest.documentHash.substring(0, 16) + '...' : 'none'
             });
 
-            // Add notification effects
+            // Dodaj efekty powiadomienia
             this.playNotificationSound();
             this.vibrate();
 
-            // Emit the protocol signature request z dokumentem
+            // Wyemituj żądanie podpisu protokołu z dokumentem
             this.emit('document_signature_request', protocolSignatureRequest);
 
         } catch (error) {
-            console.error('Error processing document signature request:', error);
+            console.error('❌ Error processing document signature request:', error);
             this.emit('error', {
                 code: 'DOCUMENT_SIGNATURE_REQUEST_ERROR',
                 message: 'Failed to process document signature request'

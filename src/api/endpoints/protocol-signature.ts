@@ -41,12 +41,11 @@ export class ProtocolSignatureAPI {
                 throw new Error('Missing required fields');
             }
 
-            return await apiClient.post<ProtocolSignatureResponse>('/document-signatures/submit', {
+            return await apiClient.post<ProtocolSignatureResponse>('/signatures/submit', {
                 sessionId: submission.sessionId,
                 signatureImage: submission.signatureImage,
                 signedAt: submission.signedAt,
                 deviceId: submission.deviceId,
-                signaturePlacement: submission.signaturePlacement
             });
 
         } catch (error) {

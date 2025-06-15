@@ -178,8 +178,35 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
     };
 
     const handleSubmit = async () => {
-        if (!canvasRef.current || canvasRef.current.isEmpty()) {
+        // Sprawdź czy canvas ref istnieje
+        if (!canvasRef.current) {
+            setError('Canvas podpisu nie jest dostępny');
+            return;
+        }
+
+        // Sprawdź czy podpis jest pusty
+        const isEmpty = canvasRef.current.isEmpty();
+        console.log('🔍 Canvas isEmpty check:', isEmpty);
+
+        if (isEmpty) {
             setError('Proszę złożyć podpis na tablecie');
+            return;
+        }
+
+        // Dodatkowa walidacja - sprawdź czy można pobrać dane z canvas
+        let signatureImage;
+        try {
+            signatureImage = canvasRef.current.toDataURL('image/png');
+            console.log('📝 Signature image generated:', signatureImage.substring(0, 50) + '...');
+
+            // Sprawdź czy to nie jest pusty canvas (ma więcej niż tylko nagłówek base64)
+            if (!signatureImage || signatureImage.length < 100) {
+                setError('Nie udało się pobrać podpisu. Spróbuj ponownie.');
+                return;
+            }
+        } catch (error) {
+            console.error('❌ Error getting signature image:', error);
+            setError('Błąd podczas pobierania podpisu');
             return;
         }
 
@@ -203,17 +230,18 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
         setError('');
 
         try {
-            // Get signature as base64 image
+            // Pobierz podpis jako base64 image
             const signatureImage = canvasRef.current.toDataURL('image/png');
+            console.log('📤 Sending signature to server, size:', signatureImage.length);
 
-            // Validate signature quality
+            // Waliduj jakość podpisu
             if (!validateSignatureQuality(signatureImage)) {
                 setError('Podpis jest zbyt prosty. Proszę podpisać się wyraźniej.');
                 setIsSubmitting(false);
                 return;
             }
 
-            // Prepare signature placement (default to bottom right)
+            // Przygotuj dane placement podpisu (domyślnie prawy dolny róg)
             const signaturePlacement = {
                 page: 1,
                 x: 400,
@@ -222,7 +250,7 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
                 height: 60
             };
 
-            // Submit signature to server
+            // Wyślij podpis na serwer
             const submissionData = {
                 sessionId: request.sessionId,
                 signatureImage,
@@ -231,33 +259,41 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
                 signaturePlacement
             };
 
+            console.log('📡 Submitting protocol signature:', {
+                sessionId: submissionData.sessionId,
+                deviceId: submissionData.deviceId,
+                signedAt: submissionData.signedAt,
+                signatureSize: signatureImage.length
+            });
+
             const response = await ProtocolSignatureAPI.submitProtocolSignature(submissionData);
 
             if (response.success && response.data) {
-                console.log('Protocol signature submitted successfully:', response.data.sessionId);
+                console.log('✅ Protocol signature submitted successfully:', response.data.sessionId);
 
-                // Acknowledge completion via WebSocket
+                // Powiadom serwer via WebSocket
                 wsClient.acknowledgeSignatureCompletion(request.sessionId, true);
 
-                // Show success feedback
+                // Pokaż sukces
                 setError('');
 
-                // Complete the process
+                // Zakończ proces
                 onComplete();
 
             } else {
                 const errorMessage = response.error?.message || 'Błąd podczas zapisywania podpisu protokołu';
+                console.error('❌ Server error:', errorMessage);
                 setError(errorMessage);
 
-                // Acknowledge failure via WebSocket
+                // Powiadom o niepowodzeniu via WebSocket
                 wsClient.acknowledgeSignatureCompletion(request.sessionId, false);
             }
 
         } catch (error) {
-            console.error('Error submitting protocol signature:', error);
+            console.error('❌ Error submitting protocol signature:', error);
             setError('Wystąpił błąd podczas przesyłania podpisu. Sprawdź połączenie sieciowe.');
 
-            // Acknowledge failure via WebSocket
+            // Powiadom o niepowodzeniu via WebSocket
             wsClient.acknowledgeSignatureCompletion(request.sessionId, false);
         } finally {
             setIsSubmitting(false);
