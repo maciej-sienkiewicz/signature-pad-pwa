@@ -1,4 +1,4 @@
-// src/hooks/useWebSocket.ts - POPRAWIONA WERSJA
+// src/hooks/useWebSocket.ts - POPRAWIONA WERSJA z nową metodą
 import { useEffect, useCallback, useRef } from 'react';
 import { tabletWebSocketHandler } from '../services/TabletWebSocketHandler';
 import { useDevice } from '../contexts/DeviceContext';
@@ -16,12 +16,10 @@ export function useWebSocket() {
                 hasToken: !!deviceConfig.deviceToken
             });
 
-            // Clear any existing timeout
             if (initializeTimeoutRef.current) {
                 clearTimeout(initializeTimeoutRef.current);
             }
 
-            // Add a small delay to ensure proper initialization order
             initializeTimeoutRef.current = setTimeout(() => {
                 try {
                     tabletWebSocketHandler.connect(deviceConfig);
@@ -54,7 +52,6 @@ export function useWebSocket() {
             callback(data);
         });
 
-        // Return cleanup function
         return () => {
             console.log(`👋 useWebSocket: Removing listener for '${event}'`);
             unsubscribe();
@@ -69,6 +66,30 @@ export function useWebSocket() {
     const acknowledgeSignatureCompletion = useCallback((sessionId: string, success: boolean) => {
         console.log(`✅ useWebSocket: Acknowledging signature completion:`, { sessionId, success });
         tabletWebSocketHandler.acknowledgeSignatureCompletion(sessionId, success);
+    }, []);
+
+    // NOWA METODA: Submit document signature z obrazem podpisu
+    const submitDocumentSignature = useCallback((
+        sessionId: string,
+        signatureImageBase64: string,
+        success: boolean = true
+    ) => {
+        console.log(`📝 useWebSocket: Submitting document signature:`, {
+            sessionId,
+            success,
+            imageSize: signatureImageBase64.length
+        });
+        tabletWebSocketHandler.submitDocumentSignature(sessionId, signatureImageBase64, success);
+    }, []);
+
+    const acknowledgeDocumentSignatureCompletion = useCallback((sessionId: string, success: boolean) => {
+        console.log(`✅ useWebSocket: Acknowledging document signature completion:`, { sessionId, success });
+        tabletWebSocketHandler.acknowledgeDocumentSignatureCompletion(sessionId, success);
+    }, []);
+
+    const sendDocumentViewingStatus = useCallback((sessionId: string, status: string) => {
+        console.log(`👁️ useWebSocket: Sending document viewing status:`, { sessionId, status });
+        tabletWebSocketHandler.sendDocumentViewingStatus(sessionId, status);
     }, []);
 
     const sendStatusUpdate = useCallback(() => {
@@ -137,6 +158,9 @@ export function useWebSocket() {
         on,
         send,
         acknowledgeSignatureCompletion,
+        submitDocumentSignature, // NOWA METODA
+        acknowledgeDocumentSignatureCompletion,
+        sendDocumentViewingStatus,
         sendStatusUpdate,
         getConnectionStatus,
         isConnected,

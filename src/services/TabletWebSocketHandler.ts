@@ -1,4 +1,4 @@
-// src/services/TabletWebSocketHandler.ts - KOMPLETNA WERSJA
+// src/services/TabletWebSocketHandler.ts - ZAKTUALIZOWANA WERSJA
 import { DeviceConfig } from '../types/device.types';
 import { SignatureRequest } from '../types/signature.types';
 import { ProtocolSignatureRequest } from '../types/protocol-signature.types';
@@ -83,6 +83,7 @@ export class TabletWebSocketHandler {
                 deviceId: this.deviceConfig.deviceId,
                 companyId: this.deviceConfig.companyId,
                 locationId: this.deviceConfig.locationId,
+                workstationId: this.deviceConfig.workstationId,
                 timestamp: new Date().toISOString()
             }
         };
@@ -187,14 +188,12 @@ export class TabletWebSocketHandler {
     private handleSignatureRequest(payload: any): void {
         console.log('Signature request received:', payload);
 
-        // Validate signature request
         if (!payload.sessionId || !payload.customerName) {
             console.error('Invalid signature request received:', payload);
             return;
         }
 
         try {
-            // Convert timestamp from Unix timestamp to ISO string if needed
             let timestamp = payload.timestamp;
             if (typeof timestamp === 'number') {
                 timestamp = new Date(timestamp * 1000).toISOString();
@@ -202,7 +201,6 @@ export class TabletWebSocketHandler {
                 timestamp = new Date().toISOString();
             }
 
-            // Handle different formats of vehicleInfo fields
             const vehicleInfo = payload.vehicleInfo || {};
             const normalizedVehicleInfo = {
                 make: vehicleInfo.make || '',
@@ -211,7 +209,6 @@ export class TabletWebSocketHandler {
                 vin: vehicleInfo.vin || null
             };
 
-            // Convert to frontend SignatureRequest format
             const signatureRequest: SignatureRequest = {
                 sessionId: payload.sessionId,
                 workstationId: payload.workstationId || 'unknown',
@@ -226,11 +223,9 @@ export class TabletWebSocketHandler {
 
             console.log('Normalized signature request:', signatureRequest);
 
-            // Add notification effects
             this.playNotificationSound();
             this.vibrate();
 
-            // Emit with appropriate event type
             this.emit('signature_request', signatureRequest);
 
         } catch (error) {
@@ -245,7 +240,6 @@ export class TabletWebSocketHandler {
     private handleSimpleSignatureRequest(payload: any): void {
         console.log('Simple signature request received:', payload);
 
-        // Add notification effects
         this.playNotificationSound();
         this.vibrate();
 
@@ -255,13 +249,12 @@ export class TabletWebSocketHandler {
     private handleDocumentSignatureRequest(payload: any): void {
         console.log('📋 Document signature request received:', payload);
 
-        // Walidacja podstawowych pól
         if (!payload.sessionId || !payload.signerName || !payload.documentTitle) {
             console.error('❌ Invalid document signature request received:', payload);
             return;
         }
 
-        // NOWA LOGIKA - sprawdź czy dokument został przesłany
+        // KLUCZOWA ZMIANA: sprawdź czy dokument został przesłany
         if (!payload.documentData) {
             console.error('❌ Document data missing in signature request');
             this.emit('error', {
@@ -271,7 +264,6 @@ export class TabletWebSocketHandler {
             return;
         }
 
-        // Sprawdź rozmiar dokumentu (max 10MB)
         if (payload.documentSize && payload.documentSize > 10 * 1024 * 1024) {
             console.error('❌ Document too large:', payload.documentSize);
             this.emit('error', {
@@ -281,7 +273,6 @@ export class TabletWebSocketHandler {
             return;
         }
 
-        // Sprawdź format dokumentu
         if (!payload.documentData.startsWith('data:application/pdf;base64,')) {
             console.error('❌ Invalid document format - not a base64 PDF');
             this.emit('error', {
@@ -292,7 +283,13 @@ export class TabletWebSocketHandler {
         }
 
         try {
-            // Konwertuj do formatu frontend z dokumentem
+            // Konwertuj business context z serwera
+            const businessContext = payload.businessContext ?
+                (typeof payload.businessContext === 'string' ?
+                    JSON.parse(payload.businessContext) :
+                    payload.businessContext) :
+                undefined;
+
             const protocolSignatureRequest: ProtocolSignatureRequest = {
                 sessionId: payload.sessionId,
                 documentId: payload.documentId || 'unknown',
@@ -304,15 +301,15 @@ export class TabletWebSocketHandler {
                 pageCount: payload.pageCount || 1,
                 previewUrls: payload.previewUrls || [],
                 instructions: payload.instructions,
-                businessContext: payload.businessContext,
+                businessContext: businessContext,
                 timeoutMinutes: payload.timeoutMinutes || 15,
                 expiresAt: payload.expiresAt || new Date(Date.now() + 15 * 60 * 1000).toISOString(),
                 signatureFields: payload.signatureFields,
 
-                // KLUCZOWE - dokument przesłany w WebSocket message
-                documentData: payload.documentData,        // Base64 PDF z serwera
-                documentSize: payload.documentSize || 0,   // Rozmiar w bytes
-                documentHash: payload.documentHash         // Opcjonalny hash
+                // NOWE POLA z dokumentem
+                documentData: payload.documentData,
+                documentSize: payload.documentSize || 0,
+                documentHash: payload.documentHash
             };
 
             console.log('✅ Normalized document signature request:', {
@@ -320,15 +317,12 @@ export class TabletWebSocketHandler {
                 documentTitle: protocolSignatureRequest.documentTitle,
                 documentSize: protocolSignatureRequest.documentSize,
                 hasDocument: !!protocolSignatureRequest.documentData,
-                documentHash: protocolSignatureRequest.documentHash ?
-                    protocolSignatureRequest.documentHash.substring(0, 16) + '...' : 'none'
+                businessContext: protocolSignatureRequest.businessContext
             });
 
-            // Dodaj efekty powiadomienia
             this.playNotificationSound();
             this.vibrate();
 
-            // Wyemituj żądanie podpisu protokołu z dokumentem
             this.emit('document_signature_request', protocolSignatureRequest);
 
         } catch (error) {
@@ -340,6 +334,7 @@ export class TabletWebSocketHandler {
         }
     }
 
+    // Pozostałe metody handleConnectionMessage, handleSessionCancelled, etc. bez zmian...
     private handleConnectionMessage(payload: any): void {
         console.log('Connection status update:', payload.status);
         this.emit('connection', payload);
@@ -365,7 +360,6 @@ export class TabletWebSocketHandler {
 
         switch (payload.messageType) {
             case 'ping':
-                // Respond to ping
                 this.send('pong', {
                     requestId: payload.data?.requestId,
                     timestamp: new Date().toISOString()
@@ -373,7 +367,6 @@ export class TabletWebSocketHandler {
                 break;
 
             case 'status_request':
-                // Send status update
                 this.sendStatusUpdate();
                 break;
 
@@ -453,7 +446,6 @@ export class TabletWebSocketHandler {
                     deviceId: this.deviceConfig?.deviceId
                 });
 
-                // Check if server is responding to heartbeats
                 const now = Date.now();
                 if (this.lastHeartbeat > 0 && (now - this.lastHeartbeat) > APP_CONFIG.WS_HEARTBEAT_INTERVAL * 3) {
                     console.warn('Server not responding to heartbeats, connection may be stale');
@@ -536,7 +528,6 @@ export class TabletWebSocketHandler {
         }
         this.listeners.get(event)!.add(callback);
 
-        // Return unsubscribe function
         return () => this.off(event, callback);
     }
 
@@ -555,6 +546,30 @@ export class TabletWebSocketHandler {
                 }
             });
         }
+    }
+
+    /**
+     * NOWA METODA: Wyślij potwierdzenie podpisu dokumentu z obrazem podpisu
+     */
+    submitDocumentSignature(
+        sessionId: string,
+        signatureImageBase64: string,
+        success: boolean = true
+    ): void {
+        this.send('signature_submission', {
+            sessionId,
+            signatureImage: signatureImageBase64,
+            success,
+            signedAt: new Date().toISOString(),
+            deviceId: this.deviceConfig?.deviceId,
+            companyId: this.deviceConfig?.companyId
+        });
+
+        console.log('📤 Document signature submitted:', {
+            sessionId,
+            success,
+            imageSize: signatureImageBase64.length
+        });
     }
 
     /**
@@ -591,7 +606,7 @@ export class TabletWebSocketHandler {
      * Send document viewing status update
      */
     sendDocumentViewingStatus(sessionId: string, status: string): void {
-        this.send('document_viewing_status', {
+        this.send('document_status_update', {
             sessionId,
             status,
             timestamp: new Date().toISOString(),
@@ -600,22 +615,6 @@ export class TabletWebSocketHandler {
 
         if (ENV.DEBUG_MODE) {
             console.log('Document viewing status sent:', { sessionId, status });
-        }
-    }
-
-    /**
-     * Send signature placement information
-     */
-    sendSignaturePlacement(sessionId: string, placement: any): void {
-        this.send('signature_placement', {
-            sessionId,
-            placement,
-            timestamp: new Date().toISOString(),
-            deviceId: this.deviceConfig?.deviceId
-        });
-
-        if (ENV.DEBUG_MODE) {
-            console.log('Signature placement sent:', { sessionId, placement });
         }
     }
 
@@ -640,7 +639,6 @@ export class TabletWebSocketHandler {
     }
 
     private getBatteryLevel(): number | null {
-        // Battery API is deprecated, return null for now
         return null;
     }
 
@@ -656,44 +654,27 @@ export class TabletWebSocketHandler {
         }
     }
 
-    /**
-     * Get current connection status
-     */
+    // Gettery i pozostałe metody bez zmian...
     getConnectionStatus(): ConnectionStatus {
         return this.connectionStatus;
     }
 
-    /**
-     * Check if WebSocket is connected and authenticated
-     */
     isConnected(): boolean {
         return this.connectionStatus === 'connected' || this.connectionStatus === 'authenticated';
     }
 
-    /**
-     * Check if WebSocket is authenticated
-     */
     isAuthenticated(): boolean {
         return this.connectionStatus === 'authenticated';
     }
 
-    /**
-     * Get WebSocket ready state
-     */
     getReadyState(): number | null {
         return this.ws?.readyState || null;
     }
 
-    /**
-     * Get device configuration
-     */
     getDeviceConfig(): DeviceConfig | null {
         return this.deviceConfig;
     }
 
-    /**
-     * Get connection statistics
-     */
     getConnectionStats(): {
         status: ConnectionStatus;
         reconnectAttempts: number;
@@ -714,9 +695,6 @@ export class TabletWebSocketHandler {
         };
     }
 
-    /**
-     * Force reconnection
-     */
     reconnect(): void {
         if (this.deviceConfig) {
             console.log('Forcing WebSocket reconnection...');
@@ -729,9 +707,6 @@ export class TabletWebSocketHandler {
         }
     }
 
-    /**
-     * Disconnect WebSocket
-     */
     disconnect(): void {
         this.isIntentionalDisconnect = true;
 
@@ -753,9 +728,6 @@ export class TabletWebSocketHandler {
         this.authenticationSent = false;
     }
 
-    /**
-     * Cleanup - call when component unmounts
-     */
     cleanup(): void {
         this.disconnect();
         this.listeners.clear();
@@ -765,7 +737,7 @@ export class TabletWebSocketHandler {
 // Export singleton instance
 export const tabletWebSocketHandler = new TabletWebSocketHandler();
 
-// Export for debugging in browser console
+// Export for debugging
 if (ENV.DEBUG_MODE && typeof window !== 'undefined') {
     (window as any).tabletWebSocketHandler = tabletWebSocketHandler;
 }

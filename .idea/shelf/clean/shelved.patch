@@ -1,0 +1,328 @@
+Index: src/api/endpoints/protocol-signature.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>// src/api/endpoints/protocol-signature.ts\nimport { apiClient } from '../client';\nimport { ApiResponse } from '../../types/api.types';\n\nexport interface ProtocolSignatureSubmissionRequest {\n    sessionId: string;\n    signatureImage: string; // base64 encoded PNG\n    signedAt: string; // ISO string\n    deviceId: string;\n    signaturePlacement?: {\n        fieldId?: string;\n        page: number;\n        x: number;\n        y: number;\n        width: number;\n        height: number;\n    };\n}\n\nexport interface ProtocolSignatureResponse {\n    success: boolean;\n    sessionId: string;\n    message: string;\n    signedAt?: string;\n    signedDocumentUrl?: string;\n    signatureImageUrl?: string;\n}\n\nexport class ProtocolSignatureAPI {\n    /**\n     * Submit a completed protocol signature\n     */\n    static async submitProtocolSignature(submission: ProtocolSignatureSubmissionRequest): Promise<ApiResponse<ProtocolSignatureResponse>> {\n        try {\n            // Validate signature data before sending\n            if (!submission.signatureImage || !submission.signatureImage.startsWith('data:image/')) {\n                throw new Error('Invalid signature image format');\n            }\n\n            if (!submission.sessionId || !submission.deviceId) {\n                throw new Error('Missing required fields');\n            }\n\n            return await apiClient.post<ProtocolSignatureResponse>('/document-signatures/submit', {\n                sessionId: submission.sessionId,\n                signatureImage: submission.signatureImage,\n                signedAt: submission.signedAt,\n                deviceId: submission.deviceId,\n                signaturePlacement: submission.signaturePlacement\n            });\n\n        } catch (error) {\n            console.error('Error submitting protocol signature:', error);\n            return {\n                success: false,\n                error: {\n                    code: 'SUBMISSION_ERROR',\n                    message: error instanceof Error ? error.message : 'Failed to submit protocol signature'\n                }\n            };\n        }\n    }\n\n    /**\n     * Get protocol signature session details\n     */\n    static async getProtocolSession(sessionId: string): Promise<ApiResponse<any>> {\n        return apiClient.get<any>(`/document-signatures/sessions/${sessionId}`);\n    }\n\n    /**\n     * Cancel a protocol signature session\n     */\n    static async cancelProtocolSession(sessionId: string, reason?: string): Promise<ApiResponse<void>> {\n        return apiClient.post<void>(`/document-signatures/sessions/${sessionId}/cancel`, {\n            reason\n        });\n    }\n\n    /**\n     * Acknowledge protocol viewing started\n     */\n    static async acknowledgeDocumentViewing(sessionId: string, status: string): Promise<ApiResponse<void>> {\n        return apiClient.post<void>(`/document-signatures/sessions/${sessionId}/viewing-status`, {\n            status,\n            timestamp: new Date().toISOString()\n        });\n    }\n\n    /**\n     * Download protocol document for viewing\n     */\n    static async downloadProtocolDocument(sessionId: string): Promise<ApiResponse<Blob>> {\n        try {\n            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/document-signatures/sessions/${sessionId}/document`, {\n                method: 'GET',\n                headers: {\n                    'Authorization': `Bearer ${localStorage.getItem('deviceToken')}`,\n                    'X-Device-Id': localStorage.getItem('deviceId') || '',\n                }\n            });\n\n            if (!response.ok) {\n                throw new Error(`HTTP ${response.status}: ${response.statusText}`);\n            }\n\n            const blob = await response.blob();\n            return {\n                success: true,\n                data: blob\n            };\n        } catch (error) {\n            return {\n                success: false,\n                error: {\n                    code: 'DOWNLOAD_ERROR',\n                    message: error instanceof Error ? error.message : 'Failed to download protocol document'\n                }\n            };\n        }\n    }\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/api/endpoints/protocol-signature.ts b/src/api/endpoints/protocol-signature.ts
+--- a/src/api/endpoints/protocol-signature.ts	(revision 1e132371bb375e99cddde5903d352a34679b8aa5)
++++ b/src/api/endpoints/protocol-signature.ts	(date 1749841999951)
+@@ -1,4 +1,5 @@
+-// src/api/endpoints/protocol-signature.ts
++// src/api/endpoints/protocol-signature.ts - FINALNA WERSJA
++
+ import { apiClient } from '../client';
+ import { ApiResponse } from '../../types/api.types';
+ 
+@@ -88,28 +89,38 @@
+     }
+ 
+     /**
+-     * Download protocol document for viewing
++     * Download protocol document for viewing - POPRAWIONA WERSJA używająca getBlob
+      */
+     static async downloadProtocolDocument(sessionId: string): Promise<ApiResponse<Blob>> {
+         try {
+-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/document-signatures/sessions/${sessionId}/document`, {
+-                method: 'GET',
+-                headers: {
+-                    'Authorization': `Bearer ${localStorage.getItem('deviceToken')}`,
+-                    'X-Device-Id': localStorage.getItem('deviceId') || '',
+-                }
+-            });
++            console.log('🔄 Downloading protocol document for session:', sessionId);
++
++            const endpoint = `/document-signatures/sessions/${sessionId}/document`;
++            const response = await apiClient.getBlob(endpoint);
++
++            if (response.success && response.data) {
++                console.log('✅ Protocol document downloaded successfully:', {
++                    sessionId,
++                    blobSize: response.data.size,
++                    blobType: response.data.type
++                });
+ 
+-            if (!response.ok) {
+-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+-            }
++                // Sprawdź czy blob zawiera PDF
++                if (response.data.type !== 'application/pdf' && response.data.size < 1000) {
++                    console.warn('⚠️ Downloaded file may not be a valid PDF:', {
++                        type: response.data.type,
++                        size: response.data.size
++                    });
++                }
+ 
+-            const blob = await response.blob();
+-            return {
+-                success: true,
+-                data: blob
+-            };
++                return response;
++            } else {
++                console.error('❌ Failed to download protocol document:', response.error);
++                return response;
++            }
++
+         } catch (error) {
++            console.error('❌ Error downloading protocol document:', error);
+             return {
+                 success: false,
+                 error: {
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project version=\"4\">\n  <component name=\"AutoImportSettings\">\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\n  </component>\n  <component name=\"ChangeListManager\">\n    <list default=\"true\" id=\"d227f5a3-a1ac-45f8-8f22-37fb7b96b75c\" name=\"Changes\" comment=\"signature dziala ale nie wysyla i nie podlgada\">\n      <change beforePath=\"$PROJECT_DIR$/src/App.tsx\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/App.tsx\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/src/types/protocol-signature.types.ts\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/types/protocol-signature.types.ts\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/src/types/signature.types.ts\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/types/signature.types.ts\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/src/types/simple-signature.types.ts\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/src/types/simple-signature.types.ts\" afterDir=\"false\" />\n    </list>\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\n  </component>\n  <component name=\"Git.Settings\">\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\n  </component>\n  <component name=\"GitHubPullRequestSearchHistory\">{\n  &quot;lastFilter&quot;: {\n    &quot;state&quot;: &quot;OPEN&quot;,\n    &quot;assignee&quot;: &quot;maciej-sienkiewicz&quot;\n  }\n}</component>\n  <component name=\"GithubPullRequestsUISettings\">{\n  &quot;selectedUrlAndAccountId&quot;: {\n    &quot;url&quot;: &quot;https://github.com/maciej-sienkiewicz/signature-pad-pwa.git&quot;,\n    &quot;accountId&quot;: &quot;ff9f2dd4-1360-43c4-9de8-e16aa0bd7292&quot;\n  }\n}</component>\n  <component name=\"ProjectColorInfo\">{\n  &quot;associatedIndex&quot;: 6\n}</component>\n  <component name=\"ProjectId\" id=\"2xpXGrrpQtIHdloqnuOwZDQAK4n\" />\n  <component name=\"ProjectLevelVcsManager\">\n    <ConfirmationsSetting value=\"2\" id=\"Add\" />\n  </component>\n  <component name=\"ProjectViewState\">\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\n    <option name=\"showLibraryContents\" value=\"true\" />\n  </component>\n  <component name=\"PropertiesComponent\">{\n  &quot;keyToString&quot;: {\n    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,\n    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,\n    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,\n    &quot;git-widget-placeholder&quot;: &quot;main&quot;,\n    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,\n    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,\n    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,\n    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,\n    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,\n    &quot;ts.external.directory.path&quot;: &quot;/Users/maciej.sienkiewicz/WebstormProjects/signature-pad-pwa/node_modules/typescript/lib&quot;,\n    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;\n  }\n}</component>\n  <component name=\"SharedIndexes\">\n    <attachedChunks>\n      <set>\n        <option value=\"bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-WS-251.25410.117\" />\n      </set>\n    </attachedChunks>\n  </component>\n  <component name=\"TaskManager\">\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\n      <changelist id=\"d227f5a3-a1ac-45f8-8f22-37fb7b96b75c\" name=\"Changes\" comment=\"\" />\n      <created>1748635896029</created>\n      <option name=\"number\" value=\"Default\" />\n      <option name=\"presentableId\" value=\"Default\" />\n      <updated>1748635896029</updated>\n      <workItem from=\"1748635897145\" duration=\"14281000\" />\n      <workItem from=\"1749840173020\" duration=\"1011000\" />\n    </task>\n    <task id=\"LOCAL-00001\" summary=\"init\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1748778829028</created>\n      <option name=\"number\" value=\"00001\" />\n      <option name=\"presentableId\" value=\"LOCAL-00001\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1748778829028</updated>\n    </task>\n    <task id=\"LOCAL-00002\" summary=\"init\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1748778836208</created>\n      <option name=\"number\" value=\"00002\" />\n      <option name=\"presentableId\" value=\"LOCAL-00002\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1748778836208</updated>\n    </task>\n    <task id=\"LOCAL-00003\" summary=\"plugin\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1749037055533</created>\n      <option name=\"number\" value=\"00003\" />\n      <option name=\"presentableId\" value=\"LOCAL-00003\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1749037055533</updated>\n    </task>\n    <task id=\"LOCAL-00004\" summary=\"tablety kolejna proba\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1749051251189</created>\n      <option name=\"number\" value=\"00004\" />\n      <option name=\"presentableId\" value=\"LOCAL-00004\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1749051251189</updated>\n    </task>\n    <task id=\"LOCAL-00005\" summary=\"tablety kolejna proba\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1749055098412</created>\n      <option name=\"number\" value=\"00005\" />\n      <option name=\"presentableId\" value=\"LOCAL-00005\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1749055098412</updated>\n    </task>\n    <task id=\"LOCAL-00006\" summary=\"CHECKPOINT\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1749074112503</created>\n      <option name=\"number\" value=\"00006\" />\n      <option name=\"presentableId\" value=\"LOCAL-00006\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1749074112503</updated>\n    </task>\n    <task id=\"LOCAL-00007\" summary=\"test\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1749126755755</created>\n      <option name=\"number\" value=\"00007\" />\n      <option name=\"presentableId\" value=\"LOCAL-00007\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1749126755755</updated>\n    </task>\n    <task id=\"LOCAL-00008\" summary=\"commit dziala ale nie ma podpisu\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1749134544810</created>\n      <option name=\"number\" value=\"00008\" />\n      <option name=\"presentableId\" value=\"LOCAL-00008\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1749134544810</updated>\n    </task>\n    <task id=\"LOCAL-00009\" summary=\"signature dziala ale nie wysyla i nie podlgada\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1749841274581</created>\n      <option name=\"number\" value=\"00009\" />\n      <option name=\"presentableId\" value=\"LOCAL-00009\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1749841274581</updated>\n    </task>\n    <option name=\"localTasksCounter\" value=\"10\" />\n    <servers />\n  </component>\n  <component name=\"TypeScriptGeneratedFilesManager\">\n    <option name=\"version\" value=\"3\" />\n  </component>\n  <component name=\"VcsManagerConfiguration\">\n    <MESSAGE value=\"kjnj\" />\n    <MESSAGE value=\"init\" />\n    <MESSAGE value=\"plugin\" />\n    <MESSAGE value=\"tablety kolejna proba\" />\n    <MESSAGE value=\"CHECKPOINT\" />\n    <MESSAGE value=\"test\" />\n    <MESSAGE value=\"commit dziala ale nie ma podpisu\" />\n    <MESSAGE value=\"signature dziala ale nie wysyla i nie podlgada\" />\n    <option name=\"LAST_COMMIT_MESSAGE\" value=\"signature dziala ale nie wysyla i nie podlgada\" />\n  </component>\n  <component name=\"XDebuggerManager\">\n    <breakpoint-manager>\n      <breakpoints>\n        <line-breakpoint enabled=\"true\" type=\"javascript\">\n          <url>file://$PROJECT_DIR$/src/components/Layout/Layout.tsx</url>\n          <option name=\"timeStamp\" value=\"2\" />\n        </line-breakpoint>\n        <line-breakpoint enabled=\"true\" type=\"javascript\">\n          <url>file://$PROJECT_DIR$/src/api/endpoints/signature.ts</url>\n          <line>1</line>\n          <option name=\"timeStamp\" value=\"4\" />\n        </line-breakpoint>\n      </breakpoints>\n    </breakpoint-manager>\n  </component>\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision 1e132371bb375e99cddde5903d352a34679b8aa5)
++++ b/.idea/workspace.xml	(date 1749842037558)
+@@ -4,11 +4,11 @@
+     <option name="autoReloadType" value="SELECTIVE" />
+   </component>
+   <component name="ChangeListManager">
+-    <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="signature dziala ale nie wysyla i nie podlgada">
+-      <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/types/protocol-signature.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/protocol-signature.types.ts" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/types/signature.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/signature.types.ts" afterDir="false" />
+-      <change beforePath="$PROJECT_DIR$/src/types/simple-signature.types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/types/simple-signature.types.ts" afterDir="false" />
++    <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="clean">
++      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/src/api/client.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/client.ts" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/src/api/endpoints/protocol-signature.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/endpoints/protocol-signature.ts" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx" afterDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+@@ -71,7 +71,7 @@
+       <option name="presentableId" value="Default" />
+       <updated>1748635896029</updated>
+       <workItem from="1748635897145" duration="14281000" />
+-      <workItem from="1749840173020" duration="1011000" />
++      <workItem from="1749840173020" duration="1670000" />
+     </task>
+     <task id="LOCAL-00001" summary="init">
+       <option name="closed" value="true" />
+@@ -145,12 +145,39 @@
+       <option name="project" value="LOCAL" />
+       <updated>1749841274581</updated>
+     </task>
+-    <option name="localTasksCounter" value="10" />
++    <task id="LOCAL-00010" summary="clean">
++      <option name="closed" value="true" />
++      <created>1749841498432</created>
++      <option name="number" value="00010" />
++      <option name="presentableId" value="LOCAL-00010" />
++      <option name="project" value="LOCAL" />
++      <updated>1749841498432</updated>
++    </task>
++    <task id="LOCAL-00011" summary="clean">
++      <option name="closed" value="true" />
++      <created>1749841559819</created>
++      <option name="number" value="00011" />
++      <option name="presentableId" value="LOCAL-00011" />
++      <option name="project" value="LOCAL" />
++      <updated>1749841559819</updated>
++    </task>
++    <option name="localTasksCounter" value="12" />
+     <servers />
+   </component>
+   <component name="TypeScriptGeneratedFilesManager">
+     <option name="version" value="3" />
+   </component>
++  <component name="Vcs.Log.Tabs.Properties">
++    <option name="TAB_STATES">
++      <map>
++        <entry key="MAIN">
++          <value>
++            <State />
++          </value>
++        </entry>
++      </map>
++    </option>
++  </component>
+   <component name="VcsManagerConfiguration">
+     <MESSAGE value="kjnj" />
+     <MESSAGE value="init" />
+@@ -160,7 +187,8 @@
+     <MESSAGE value="test" />
+     <MESSAGE value="commit dziala ale nie ma podpisu" />
+     <MESSAGE value="signature dziala ale nie wysyla i nie podlgada" />
+-    <option name="LAST_COMMIT_MESSAGE" value="signature dziala ale nie wysyla i nie podlgada" />
++    <MESSAGE value="clean" />
++    <option name="LAST_COMMIT_MESSAGE" value="clean" />
+   </component>
+   <component name="XDebuggerManager">
+     <breakpoint-manager>
+Index: src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>\n// src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx\nimport { useState, useRef, useEffect } from 'react';\nimport SignatureCanvas from '../SignaturePad/SignatureCanvas';\nimport { ProtocolSignatureRequest } from '../../types/protocol-signature.types';\nimport { ProtocolSignatureAPI } from '../../api/endpoints/protocol-signature';\nimport { useDevice } from '../../contexts/DeviceContext';\nimport { wsClient } from '../../api/websocket';\nimport styles from './ProtocolSignaturePad.module.css';\n\ninterface ProtocolSignaturePadProps {\n    request: ProtocolSignatureRequest;\n    onComplete: () => void;\n    onCancel: () => void;\n}\n\nexport default function ProtocolSignaturePad({ request, onComplete, onCancel }: ProtocolSignaturePadProps) {\n    const [isSubmitting, setIsSubmitting] = useState(false);\n    const [timeLeft, setTimeLeft] = useState(request.timeoutMinutes * 60);\n    const [error, setError] = useState('');\n    const [showConfirmDialog, setShowConfirmDialog] = useState(false);\n    const [documentViewed, setDocumentViewed] = useState(false);\n    const [showDocument, setShowDocument] = useState(false);\n    const [documentUrl, setDocumentUrl] = useState<string | null>(null);\n    const canvasRef = useRef<any>(null);\n    const { deviceConfig } = useDevice();\n\n    // Countdown timer\n    useEffect(() => {\n        const timer = setInterval(() => {\n            setTimeLeft((prev) => {\n                if (prev <= 1) {\n                    clearInterval(timer);\n                    handleTimeout();\n                    return 0;\n                }\n                return prev - 1;\n            });\n        }, 1000);\n\n        return () => clearInterval(timer);\n    }, []);\n\n    // Load document on mount\n    useEffect(() => {\n        loadDocument();\n    }, []);\n\n    // Notify server about document viewing\n    useEffect(() => {\n        if (deviceConfig && !documentViewed) {\n            // Notify that viewing has started\n            ProtocolSignatureAPI.acknowledgeDocumentViewing(request.sessionId, 'VIEWING_STARTED');\n            setDocumentViewed(true);\n        }\n    }, [request.sessionId, deviceConfig, documentViewed]);\n\n    const loadDocument = async () => {\n        try {\n            const response = await ProtocolSignatureAPI.downloadProtocolDocument(request.sessionId);\n            if (response.success && response.data) {\n                const url = URL.createObjectURL(response.data);\n                setDocumentUrl(url);\n            } else {\n                setError('Nie można pobrać dokumentu protokołu');\n            }\n        } catch (error) {\n            console.error('Error loading protocol document:', error);\n            setError('Błąd podczas ładowania dokumentu');\n        }\n    };\n\n    const handleTimeout = () => {\n        setError('Sesja wygasła. Czas na złożenie podpisu minął.');\n\n        // Notify server about timeout\n        if (deviceConfig) {\n            wsClient.acknowledgeSignatureCompletion(request.sessionId, false);\n        }\n\n        setTimeout(() => {\n            onCancel();\n        }, 3000);\n    };\n\n    const handleViewDocument = () => {\n        if (documentUrl) {\n            setShowDocument(true);\n            // Notify server that document viewing started\n            if (deviceConfig) {\n                ProtocolSignatureAPI.acknowledgeDocumentViewing(request.sessionId, 'DOCUMENT_OPENED');\n            }\n        }\n    };\n\n    const handleDocumentViewed = () => {\n        setShowDocument(false);\n        // Notify server that document viewing completed\n        if (deviceConfig) {\n            ProtocolSignatureAPI.acknowledgeDocumentViewing(request.sessionId, 'DOCUMENT_VIEWED');\n        }\n    };\n\n    const handleSubmit = async () => {\n        if (!canvasRef.current || canvasRef.current.isEmpty()) {\n            setError('Proszę złożyć podpis na tablecie');\n            return;\n        }\n\n        if (!deviceConfig) {\n            setError('Brak konfiguracji urządzenia');\n            return;\n        }\n\n        setShowConfirmDialog(true);\n    };\n\n    const confirmSubmit = async () => {\n        if (!deviceConfig) {\n            setError('Brak konfiguracji urządzenia');\n            setShowConfirmDialog(false);\n            return;\n        }\n\n        setShowConfirmDialog(false);\n        setIsSubmitting(true);\n        setError('');\n\n        try {\n            // Get signature as base64 image\n            const signatureImage = canvasRef.current.toDataURL('image/png');\n\n            // Validate signature quality\n            if (!validateSignatureQuality(signatureImage)) {\n                setError('Podpis jest zbyt prosty. Proszę podpisać się wyraźniej.');\n                setIsSubmitting(false);\n                return;\n            }\n\n            // Prepare signature placement (default to bottom right)\n            const signaturePlacement = {\n                page: 1,\n                x: 400, // Adjust based on your document layout\n                y: 700, // Adjust based on your document layout\n                width: 200,\n                height: 60\n            };\n\n            // Submit signature to server\n            const submissionData = {\n                sessionId: request.sessionId,\n                signatureImage,\n                signedAt: new Date().toISOString(),\n                deviceId: deviceConfig.deviceId,\n                signaturePlacement\n            };\n\n            const response = await ProtocolSignatureAPI.submitProtocolSignature(submissionData);\n\n            if (response.success && response.data) {\n                console.log('Protocol signature submitted successfully:', response.data.sessionId);\n\n                // Acknowledge completion via WebSocket\n                wsClient.acknowledgeSignatureCompletion(request.sessionId, true);\n\n                // Show success feedback\n                setError('');\n\n                // Complete the process\n                onComplete();\n\n            } else {\n                const errorMessage = response.error?.message || 'Błąd podczas zapisywania podpisu protokołu';\n                setError(errorMessage);\n\n                // Acknowledge failure via WebSocket\n                wsClient.acknowledgeSignatureCompletion(request.sessionId, false);\n            }\n\n        } catch (error) {\n            console.error('Error submitting protocol signature:', error);\n            setError('Wystąpił błąd podczas przesyłania podpisu. Sprawdź połączenie sieciowe.');\n\n            // Acknowledge failure via WebSocket\n            wsClient.acknowledgeSignatureCompletion(request.sessionId, false);\n        } finally {\n            setIsSubmitting(false);\n        }\n    };\n\n    const validateSignatureQuality = (signatureDataUrl: string): boolean => {\n        try {\n            const base64Data = signatureDataUrl.split(',')[1];\n            if (!base64Data) {\n                return false;\n            }\n\n            const binaryLength = atob(base64Data).length;\n            return binaryLength >= 1000; // Minimum size check\n        } catch (error) {\n            console.error('Error validating signature:', error);\n            return false;\n        }\n    };\n\n    const handleClear = () => {\n        if (canvasRef.current) {\n            canvasRef.current.clear();\n        }\n        setError('');\n    };\n\n    const handleCancel = () => {\n        if (deviceConfig) {\n            wsClient.acknowledgeSignatureCompletion(request.sessionId, false);\n        }\n        onCancel();\n    };\n\n    const formatTime = (seconds: number): string => {\n        const minutes = Math.floor(seconds / 60);\n        const remainingSeconds = seconds % 60;\n        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;\n    };\n\n    const getTimerColor = (): string => {\n        if (timeLeft < 30) return '#ef4444'; // red\n        if (timeLeft < 60) return '#f59e0b'; // orange\n        return '#6b7280'; // gray\n    };\n\n    if (!deviceConfig) {\n        return (\n            <div className={styles.container}>\n                <div className={styles.content}>\n                    <div className={styles.error}>\n                        Brak konfiguracji urządzenia. Proszę sparować tablet ponownie.\n                    </div>\n                </div>\n            </div>\n        );\n    }\n\n    return (\n        <div className={styles.container}>\n            <div className={styles.header}>\n                <div className={styles.protocolInfo}>\n                    <h2 className={styles.documentTitle}>{request.documentTitle}</h2>\n                    <p className={styles.signerName}>Podpisujący: <strong>{request.signerName}</strong></p>\n                    {request.instructions && (\n                        <p className={styles.instructions}>{request.instructions}</p>\n                    )}\n                    {request.businessContext?.protocolId && (\n                        <p className={styles.protocolId}>\n                            Protokół Nr: <code>#{request.businessContext.protocolId}</code>\n                        </p>\n                    )}\n                </div>\n\n                <div className={styles.timer} style={{ color: getTimerColor() }}>\n                    Pozostało: {formatTime(timeLeft)}\n                </div>\n            </div>\n\n            <div className={styles.content}>\n                {/* Document Preview Section */}\n                <div className={styles.documentSection}>\n                    <h3 className={styles.sectionTitle}>Dokument do podpisu</h3>\n                    <div className={styles.documentActions}>\n                        <button\n                            onClick={handleViewDocument}\n                            className={styles.viewDocumentButton}\n                            disabled={!documentUrl}\n                        >\n                            {documentUrl ? 'Pokaż dokument' : 'Ładowanie dokumentu...'}\n                        </button>\n                        {documentViewed && (\n                            <span className={styles.viewedIndicator}>✓ Dokument przejrzany</span>\n                        )}\n                    </div>\n                </div>\n\n                {error && (\n                    <div className={styles.error}>\n                        {error}\n                    </div>\n                )}\n\n                {/* Signature Section */}\n                <div className={styles.signatureSection}>\n                    <h3 className={styles.sectionTitle}>Podpis</h3>\n                    <p className={styles.signaturePrompt}>Proszę złożyć podpis poniżej</p>\n                    <div className={styles.canvasWrapper}>\n                        <SignatureCanvas ref={canvasRef} />\n                    </div>\n                </div>\n\n                <div className={styles.actions}>\n                    <button\n                        onClick={handleCancel}\n                        className={styles.cancelButton}\n                        disabled={isSubmitting}\n                    >\n                        Anuluj\n                    </button>\n\n                    <button\n                        onClick={handleClear}\n                        className={styles.clearButton}\n                        disabled={isSubmitting}\n                    >\n                        Wyczyść\n                    </button>\n\n                    <button\n                        onClick={handleSubmit}\n                        className={styles.submitButton}\n                        disabled={isSubmitting || timeLeft === 0}\n                    >\n                        {isSubmitting ? 'Wysyłanie...' : 'Zatwierdź podpis'}\n                    </button>\n                </div>\n            </div>\n\n            {/* Document Viewer Modal */}\n            {showDocument && documentUrl && (\n                <div className={styles.documentModal}>\n                    <div className={styles.documentModalContent}>\n                        <div className={styles.documentModalHeader}>\n                            <h3>Protokół do podpisu</h3>\n                            <button\n                                onClick={handleDocumentViewed}\n                                className={styles.closeDocumentButton}\n                            >\n                                ✕ Zamknij\n                            </button>\n                        </div>\n                        <div className={styles.documentViewer}>\n                            <iframe\n                                src={documentUrl}\n                                title=\"Protocol Document\"\n                                className={styles.documentFrame}\n                            />\n                        </div>\n                        <div className={styles.documentModalFooter}>\n                            <button\n                                onClick={handleDocumentViewed}\n                                className={styles.continueButton}\n                            >\n                                Kontynuuj do podpisu\n                            </button>\n                        </div>\n                    </div>\n                </div>\n            )}\n\n            {/* Confirmation Dialog */}\n            {showConfirmDialog && (\n                <div className={styles.dialogOverlay}>\n                    <div className={styles.dialog}>\n                        <h3>Potwierdzenie podpisu protokołu</h3>\n                        <p>Czy jesteś pewien, że chcesz zatwierdzić ten podpis protokołu?</p>\n                        <p className={styles.dialogNote}>\n                            Po zatwierdzeniu protokół zostanie automatycznie podpisany i zapisany.\n                        </p>\n\n                        <div className={styles.dialogActions}>\n                            <button\n                                onClick={() => setShowConfirmDialog(false)}\n                                className={styles.dialogCancelButton}\n                                disabled={isSubmitting}\n                            >\n                                Nie, popraw\n                            </button>\n                            <button\n                                onClick={confirmSubmit}\n                                className={styles.dialogConfirmButton}\n                                disabled={isSubmitting}\n                            >\n                                Tak, zatwierdź\n                            </button>\n                        </div>\n                    </div>\n                </div>\n            )}\n        </div>\n    );\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx b/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx
+--- a/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx	(revision 1e132371bb375e99cddde5903d352a34679b8aa5)
++++ b/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx	(date 1749842037541)
+@@ -55,18 +55,59 @@
+         }
+     }, [request.sessionId, deviceConfig, documentViewed]);
+ 
++    useEffect(() => {
++        return () => {
++            if (documentUrl) {
++                URL.revokeObjectURL(documentUrl);
++                console.log('🧹 Document URL revoked on cleanup');
++            }
++        };
++    }, [documentUrl]);
++
+     const loadDocument = async () => {
+         try {
++            console.log('🔄 Loading document for session:', request.sessionId);
++
+             const response = await ProtocolSignatureAPI.downloadProtocolDocument(request.sessionId);
++
+             if (response.success && response.data) {
++                console.log('✅ Document loaded successfully:', {
++                    sessionId: request.sessionId,
++                    size: response.data.size,
++                    type: response.data.type
++                });
++
++                // Sprawdź czy to prawdziwy PDF
++                if (response.data.size < 100) {
++                    console.error('❌ Document too small, probably not a valid PDF');
++                    setError('Dokument jest nieprawidłowy lub uszkodzony');
++                    return;
++                }
++
++                // Twórz URL dla blob
+                 const url = URL.createObjectURL(response.data);
+                 setDocumentUrl(url);
++
++                console.log('✅ Document URL created:', url);
++
+             } else {
+-                setError('Nie można pobrać dokumentu protokołu');
++                console.error('❌ Failed to load document:', response.error);
++                const errorMessage = response.error?.message || 'Nie można pobrać dokumentu protokołu';
++
++                // Bardziej szczegółowe komunikaty błędów
++                if (response.error?.code === 'NOT_FOUND') {
++                    setError('Dokument nie został znaleziony');
++                } else if (response.error?.code === 'UNAUTHORIZED') {
++                    setError('Brak uprawnień do pobrania dokumentu');
++                } else if (response.error?.code === 'NETWORK_ERROR') {
++                    setError('Błąd sieci. Sprawdź połączenie internetowe.');
++                } else {
++                    setError(errorMessage);
++                }
+             }
+         } catch (error) {
+-            console.error('Error loading protocol document:', error);
+-            setError('Błąd podczas ładowania dokumentu');
++            console.error('❌ Exception in loadDocument:', error);
++            setError('Wystąpił błąd podczas ładowania dokumentu');
+         }
+     };
+ 
+Index: src/api/client.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>// src/api/client.ts\nimport { ApiResponse } from '../types/api.types';\nimport { ENV } from '../config/environment';\nimport { APP_CONFIG } from '../config/constants';\nimport { StorageService } from '../services/storage.service';\n\nclass ApiClient {\n    private baseURL: string;\n    private timeout: number;\n    private storage: StorageService;\n\n    constructor() {\n        this.baseURL = ENV.API_BASE_URL;\n        this.timeout = APP_CONFIG.API_TIMEOUT;\n        this.storage = new StorageService();\n    }\n\n    private async getHeaders(): Promise<Record<string, string>> {\n        const deviceConfig = this.storage.getDeviceConfig();\n\n        const headers: Record<string, string> = {\n            'Content-Type': 'application/json',\n            'Accept': 'application/json',\n            'X-App-Version': APP_CONFIG.APP_VERSION,\n            'X-Client-Type': 'tablet'\n        };\n\n        // Add device authentication if available\n        if (deviceConfig) {\n            headers['Authorization'] = `Bearer ${deviceConfig.deviceToken}`;\n            headers['X-Device-Id'] = deviceConfig.deviceId;\n            headers['X-Company-Id'] = deviceConfig.companyId.toString(); // Changed from X-Tenant-Id\n\n            if (deviceConfig.locationId) {\n                headers['X-Location-Id'] = deviceConfig.locationId;\n            }\n\n            if (deviceConfig.workstationId) {\n                headers['X-Workstation-Id'] = deviceConfig.workstationId;\n            }\n        }\n\n        return headers;\n    }\n\n    private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {\n        let responseData: any;\n\n        try {\n            const contentType = response.headers.get('content-type');\n            if (contentType && contentType.includes('application/json')) {\n                responseData = await response.json();\n            } else {\n                responseData = await response.text();\n            }\n        } catch (error) {\n            console.error('Failed to parse response:', error);\n            responseData = null;\n        }\n\n        if (!response.ok) {\n            // Handle different error response formats\n            let errorCode = 'UNKNOWN_ERROR';\n            let errorMessage = 'An unexpected error occurred';\n\n            if (responseData) {\n                if (typeof responseData === 'object') {\n                    errorCode = responseData.code || responseData.error?.code || `HTTP_${response.status}`;\n                    errorMessage = responseData.message || responseData.error?.message || response.statusText;\n                } else if (typeof responseData === 'string') {\n                    errorMessage = responseData;\n                    errorCode = `HTTP_${response.status}`;\n                }\n            }\n\n            // Handle specific HTTP status codes\n            switch (response.status) {\n                case 401:\n                    errorCode = 'UNAUTHORIZED';\n                    errorMessage = 'Device authentication failed';\n                    // Clear device config on authentication failure\n                    this.storage.clearDeviceConfig();\n                    break;\n                case 403:\n                    errorCode = 'FORBIDDEN';\n                    errorMessage = 'Access denied - device may not be authorized for this company';\n                    break;\n                case 404:\n                    errorCode = 'NOT_FOUND';\n                    errorMessage = 'Resource not found';\n                    break;\n                case 429:\n                    errorCode = 'RATE_LIMITED';\n                    errorMessage = 'Too many requests';\n                    break;\n                case 500:\n                    errorCode = 'SERVER_ERROR';\n                    errorMessage = 'Internal server error';\n                    break;\n            }\n\n            return {\n                success: false,\n                error: {\n                    code: errorCode,\n                    message: errorMessage\n                }\n            };\n        }\n\n        return {\n            success: true,\n            data: responseData\n        };\n    }\n\n    private createAbortController(): AbortController {\n        const controller = new AbortController();\n        setTimeout(() => controller.abort(), this.timeout);\n        return controller;\n    }\n\n    async get<T>(endpoint: string): Promise<ApiResponse<T>> {\n        try {\n            const controller = this.createAbortController();\n\n            const response = await fetch(`${this.baseURL}${endpoint}`, {\n                method: 'GET',\n                headers: await this.getHeaders(),\n                signal: controller.signal\n            });\n\n            return this.handleResponse<T>(response);\n        } catch (error) {\n            if (error instanceof Error && error.name === 'AbortError') {\n                return {\n                    success: false,\n                    error: {\n                        code: 'TIMEOUT',\n                        message: 'Request timeout'\n                    }\n                };\n            }\n\n            return {\n                success: false,\n                error: {\n                    code: 'NETWORK_ERROR',\n                    message: error instanceof Error ? error.message : 'Network error'\n                }\n            };\n        }\n    }\n\n    async post<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {\n        try {\n            const controller = this.createAbortController();\n\n            const requestInit: RequestInit = {\n                method: 'POST',\n                headers: await this.getHeaders(),\n                signal: controller.signal\n            };\n\n            // Only add body if data exists\n            if (data !== undefined) {\n                requestInit.body = JSON.stringify(data);\n            }\n\n            const response = await fetch(`${this.baseURL}${endpoint}`, requestInit);\n\n            return this.handleResponse<T>(response);\n        } catch (error) {\n            if (error instanceof Error && error.name === 'AbortError') {\n                return {\n                    success: false,\n                    error: {\n                        code: 'TIMEOUT',\n                        message: 'Request timeout'\n                    }\n                };\n            }\n\n            return {\n                success: false,\n                error: {\n                    code: 'NETWORK_ERROR',\n                    message: error instanceof Error ? error.message : 'Network error'\n                }\n            };\n        }\n    }\n\n    async put<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {\n        try {\n            const controller = this.createAbortController();\n\n            const requestInit: RequestInit = {\n                method: 'PUT',\n                headers: await this.getHeaders(),\n                signal: controller.signal\n            };\n\n            // Only add body if data exists\n            if (data !== undefined) {\n                requestInit.body = JSON.stringify(data);\n            }\n\n            const response = await fetch(`${this.baseURL}${endpoint}`, requestInit);\n\n            return this.handleResponse<T>(response);\n        } catch (error) {\n            if (error instanceof Error && error.name === 'AbortError') {\n                return {\n                    success: false,\n                    error: {\n                        code: 'TIMEOUT',\n                        message: 'Request timeout'\n                    }\n                };\n            }\n\n            return {\n                success: false,\n                error: {\n                    code: 'NETWORK_ERROR',\n                    message: error instanceof Error ? error.message : 'Network error'\n                }\n            };\n        }\n    }\n\n    async delete<T>(endpoint: string): Promise<ApiResponse<T>> {\n        try {\n            const controller = this.createAbortController();\n\n            const response = await fetch(`${this.baseURL}${endpoint}`, {\n                method: 'DELETE',\n                headers: await this.getHeaders(),\n                signal: controller.signal\n            });\n\n            return this.handleResponse<T>(response);\n        } catch (error) {\n            if (error instanceof Error && error.name === 'AbortError') {\n                return {\n                    success: false,\n                    error: {\n                        code: 'TIMEOUT',\n                        message: 'Request timeout'\n                    }\n                };\n            }\n\n            return {\n                success: false,\n                error: {\n                    code: 'NETWORK_ERROR',\n                    message: error instanceof Error ? error.message : 'Network error'\n                }\n            };\n        }\n    }\n\n    /**\n     * Health check endpoint\n     */\n    async healthCheck(): Promise<boolean> {\n        try {\n            const response = await this.get<{ status: string }>('/health');\n            return response.success && response.data?.status === 'UP';\n        } catch (error) {\n            console.error('Health check failed:', error);\n            return false;\n        }\n    }\n}\n\nexport const apiClient = new ApiClient();
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/api/client.ts b/src/api/client.ts
+--- a/src/api/client.ts	(revision 1e132371bb375e99cddde5903d352a34679b8aa5)
++++ b/src/api/client.ts	(date 1749841990476)
+@@ -1,4 +1,4 @@
+-// src/api/client.ts
++// src/api/client.ts - POPRAWIONA WERSJA
+ import { ApiResponse } from '../types/api.types';
+ import { ENV } from '../config/environment';
+ import { APP_CONFIG } from '../config/constants';
+@@ -15,7 +15,8 @@
+         this.storage = new StorageService();
+     }
+ 
+-    private async getHeaders(): Promise<Record<string, string>> {
++    // PUBLICZNA metoda getHeaders
++    public async getHeaders(): Promise<Record<string, string>> {
+         const deviceConfig = this.storage.getDeviceConfig();
+ 
+         const headers: Record<string, string> = {
+@@ -29,7 +30,7 @@
+         if (deviceConfig) {
+             headers['Authorization'] = `Bearer ${deviceConfig.deviceToken}`;
+             headers['X-Device-Id'] = deviceConfig.deviceId;
+-            headers['X-Company-Id'] = deviceConfig.companyId.toString(); // Changed from X-Tenant-Id
++            headers['X-Company-Id'] = deviceConfig.companyId.toString();
+ 
+             if (deviceConfig.locationId) {
+                 headers['X-Location-Id'] = deviceConfig.locationId;
+@@ -251,6 +252,60 @@
+                     }
+                 };
+             }
++
++            return {
++                success: false,
++                error: {
++                    code: 'NETWORK_ERROR',
++                    message: error instanceof Error ? error.message : 'Network error'
++                }
++            };
++        }
++    }
++
++    /**
++     * Specjalna metoda do pobierania plików (Blob)
++     */
++    async getBlob(endpoint: string): Promise<ApiResponse<Blob>> {
++        try {
++            const controller = this.createAbortController();
++            const headers = await this.getHeaders();
++
++            // Usuń Content-Type dla requests pobierających pliki
++            delete headers['Content-Type'];
++
++            const response = await fetch(`${this.baseURL}${endpoint}`, {
++                method: 'GET',
++                headers: headers,
++                signal: controller.signal
++            });
++
++            if (!response.ok) {
++                return {
++                    success: false,
++                    error: {
++                        code: `HTTP_${response.status}`,
++                        message: response.statusText
++                    }
++                };
++            }
++
++            const blob = await response.blob();
++            return {
++                success: true,
++                data: blob
++            };
++
++        } catch (error) {
++            if (error instanceof Error && error.name === 'AbortError') {
++                return {
++                    success: false,
++                    error: {
++                        code: 'TIMEOUT',
++                        message: 'Request timeout'
++                    }
++                };
++            }
+ 
+             return {
+                 success: false,

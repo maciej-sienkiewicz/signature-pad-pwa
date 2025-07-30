@@ -4,11 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="signature dziala ale nie wysyla i nie podlgada">
+    <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="podglad dokumentu">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api/endpoints/protocol-signature.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/endpoints/protocol-signature.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/SignaturePad/SignatureCanvas.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/SignaturePad/SignatureCanvas.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/hooks/useWebSocket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/useWebSocket.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -60,7 +58,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-WS-251.25410.117" />
+        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-WS-251.26927.40" />
       </set>
     </attachedChunks>
   </component>
@@ -73,6 +71,20 @@
       <updated>1748635896029</updated>
       <workItem from="1748635897145" duration="14281000" />
       <workItem from="1749840173020" duration="1011000" />
+      <workItem from="1751831746521" duration="1344000" />
+      <workItem from="1751961666221" duration="61000" />
+      <workItem from="1751997780512" duration="4000" />
+      <workItem from="1751997853928" duration="4399000" />
+      <workItem from="1752134542130" duration="5423000" />
+      <workItem from="1752518364991" duration="1234000" />
+      <workItem from="1752938869857" duration="550000" />
+      <workItem from="1753084830626" duration="496000" />
+      <workItem from="1753126134187" duration="1605000" />
+      <workItem from="1753220772761" duration="5202000" />
+      <workItem from="1753430492664" duration="8757000" />
+      <workItem from="1753699025849" duration="1647000" />
+      <workItem from="1753786360536" duration="2872000" />
+      <workItem from="1753880302432" duration="701000" />
     </task>
     <task id="LOCAL-00001" summary="init">
       <option name="closed" value="true" />
