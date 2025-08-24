@@ -6,8 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="podglad dokumentu">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/hooks/useWebSocket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/hooks/useWebSocket.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/IdleScreen/IdleScreen.module.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/IdleScreen/IdleScreen.module.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/IdleScreen/IdleScreen.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/IdleScreen/IdleScreen.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.module.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.module.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/ProtocolSignaturePad/ProtocolSignaturePad.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -26,7 +28,7 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/maciej-sienkiewicz/signature-pad-pwa.git&quot;,
-    &quot;accountId&quot;: &quot;ff9f2dd4-1360-43c4-9de8-e16aa0bd7292&quot;
+    &quot;accountId&quot;: &quot;f9109353-7592-469a-aaa1-57d91d1aa519&quot;
   }
 }</component>
   <component name="ProjectColorInfo">{
@@ -44,8 +46,10 @@
   &quot;keyToString&quot;: {
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/maciej.sienkiewicz/WebstormProjects/signature-pad-pwa&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -58,7 +62,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-WS-251.26927.40" />
+        <option value="bundled-js-predefined-d6986cc7102b-e03c56caf84a-JavaScript-WS-252.23892.411" />
       </set>
     </attachedChunks>
   </component>
@@ -85,6 +89,18 @@
       <workItem from="1753699025849" duration="1647000" />
       <workItem from="1753786360536" duration="2872000" />
       <workItem from="1753880302432" duration="701000" />
+      <workItem from="1753948854846" duration="1091000" />
+      <workItem from="1753959677828" duration="87000" />
+      <workItem from="1753968284415" duration="4815000" />
+      <workItem from="1754035212388" duration="1129000" />
+      <workItem from="1754133028760" duration="1875000" />
+      <workItem from="1754294397205" duration="573000" />
+      <workItem from="1754599563838" duration="1821000" />
+      <workItem from="1755552796502" duration="1000000" />
+      <workItem from="1755699010994" duration="605000" />
+      <workItem from="1755812556167" duration="1239000" />
+      <workItem from="1755879032686" duration="6376000" />
+      <workItem from="1755981418425" duration="4004000" />
     </task>
     <task id="LOCAL-00001" summary="init">
       <option name="closed" value="true" />

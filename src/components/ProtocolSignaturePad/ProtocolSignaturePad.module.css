@@ -1,388 +1,435 @@
-/* src/components/ProtocolSignaturePad/ProtocolSignaturePad.module.css */
+/* Ultra-Luxury Protocol Signature Interface */
+
+:root {
+    /* Luxury Dark Foundation */
+    --color-void: #000000;
+    --color-carbon: #0d1117;
+    --color-graphite: #161b22;
+    --color-steel: #21262d;
+    --color-titanium: #30363d;
+
+    /* Luxury Metals */
+    --color-platinum: #f0f6fc;
+    --color-silver: #e6edf3;
+    --color-chrome: #b1bac4;
+    --color-pewter: #8b949e;
+
+    /* Precision Accents */
+    --color-arctic: #58a6ff;
+    --color-ice: #79c0ff;
+    --color-frost: #a5f3fc;
+
+    /* Status Indicators */
+    --color-emerald: #7c3aed;
+    --color-amber: #f59e0b;
+    --color-crimson: #f85149;
+
+    /* Advanced Shadows */
+    --shadow-void: 0 0 0 1px rgba(240, 246, 252, 0.1);
+    --shadow-depth: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 0 20px rgba(88, 166, 255, 0.2);
+
+    /* Precision Typography */
+    --font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+
+    /* Spacing Precision */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --space-12: 3rem;
+    --space-16: 4rem;
+
+    /* Refined Radii */
+    --radius: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+
+    /* Fluid Motion */
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    --duration: 200ms;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 .container {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background: var(--color-white);
-    animation: fadeIn var(--transition-fast);
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: var(--space-6) var(--space-8);
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    border-bottom: 1px solid var(--color-gray-200);
-    min-height: 120px;
-}
-
-.protocolInfo {
-    flex: 1;
-}
-
-.documentTitle {
-    font-size: var(--text-2xl);
-    color: var(--primary-color);
-    margin-bottom: var(--space-2);
-    font-weight: 600;
-}
-
-.signerName {
-    font-size: var(--text-lg);
-    color: var(--color-gray-700);
-    margin-bottom: var(--space-2);
-}
-
-.instructions {
-    font-size: var(--text-base);
-    color: var(--color-gray-600);
-    margin-bottom: var(--space-2);
-    font-style: italic;
-}
-
-.protocolId {
-    font-size: var(--text-sm);
-    color: var(--color-gray-500);
-}
-
-.protocolId code {
-    background: var(--color-gray-100);
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-sm);
-    font-family: var(--font-mono);
-    color: var(--secondary-color);
-    font-weight: 600;
-}
-
-.timer {
-    font-size: var(--text-lg);
-    font-weight: 600;
-    padding: var(--space-3) var(--space-4);
-    background: var(--color-white);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    font-variant-numeric: tabular-nums;
-    border: 2px solid transparent;
-    transition: all var(--transition-base);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    grid-template-areas:
+    "content"
+    "actions";
+    background: var(--color-void);
+    font-family: var(--font-system);
+    color: var(--color-platinum);
+    overflow: hidden;
+    z-index: 9999;
 }
 
 .content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: var(--space-6) var(--space-8);
-    max-width: 1200px;
-    width: 100%;
-    margin: 0 auto;
-    gap: var(--space-6);
+    grid-area: content;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    min-height: 0;
+    overflow: hidden;
 }
 
-.documentSection {
-    background: var(--color-gray-50);
-    padding: var(--space-4);
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--color-gray-200);
+.documentPanel {
+    background: var(--color-carbon);
+    border-right: 1px solid var(--color-steel);
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-8);
+    gap: var(--space-6);
+    overflow: hidden;
 }
 
 .sectionTitle {
-    font-size: var(--text-lg);
-    font-weight: 600;
-    color: var(--primary-color);
-    margin-bottom: var(--space-3);
-}
-
-.documentActions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-chrome);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-4);
 }
 
 .viewDocumentButton {
-    background: var(--secondary-color);
-    color: var(--color-white);
-    font-size: var(--text-base);
+    width: 100%;
+    padding: var(--space-4);
+    background: var(--color-graphite);
+    border: 1px solid var(--color-steel);
+    border-radius: var(--radius);
+    color: var(--color-silver);
+    font-size: 0.875rem;
     font-weight: 500;
-    padding: var(--space-3) var(--space-6);
-    border: none;
-    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: all var(--transition-base);
-    box-shadow: var(--shadow-sm);
+    transition: all var(--duration) var(--ease);
+    text-align: center;
 }
 
 .viewDocumentButton:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--secondary-color) 90%, black);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    background: var(--color-steel);
+    border-color: var(--color-arctic);
+    color: var(--color-platinum);
+    box-shadow: var(--shadow-glow);
 }
 
 .viewDocumentButton:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
 }
 
-.viewedIndicator {
-    color: var(--color-success);
-    font-size: var(--text-sm);
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-}
-
-.signatureSection {
-    flex: 1;
+.signaturePanel {
+    background: var(--color-void);
     display: flex;
     flex-direction: column;
+    padding: var(--space-8);
+    gap: var(--space-6);
+    min-height: 0;
 }
 
-.signaturePrompt {
-    font-size: var(--text-base);
-    color: var(--color-gray-600);
-    margin-bottom: var(--space-4);
-    text-align: center;
+.signatureArea {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.signatureTitle {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-chrome);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.canvasContainer {
+    flex: 1;
+    min-height: 300px;
+    background: var(--color-carbon);
+    border: 1px solid var(--color-steel);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    position: relative;
+    overflow: hidden;
+}
+
+.canvasContainer::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid transparent;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(var(--color-steel), var(--color-steel)) padding-box,
+    linear-gradient(45deg, var(--color-arctic), var(--color-ice)) border-box;
+    opacity: 0;
+    transition: opacity var(--duration) var(--ease);
+    pointer-events: none;
+}
+
+.canvasContainer:hover::before {
+    opacity: 0.5;
 }
 
 .canvasWrapper {
-    flex: 1;
+    width: 100%;
+    height: 100%;
+    background: var(--color-graphite);
+    border-radius: var(--radius);
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 300px;
-    background: var(--color-white);
-    border: 2px solid var(--color-gray-200);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-    padding: var(--space-4);
+    position: relative;
 }
 
-.error {
-    background: color-mix(in srgb, var(--color-error) 10%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
-    color: var(--color-error);
-    padding: var(--space-4);
-    border-radius: var(--radius-md);
-    text-align: center;
-    font-weight: 500;
+.canvasWrapper canvas {
+    border-radius: var(--radius);
+    background: transparent;
 }
 
 .actions {
+    grid-area: actions;
     display: flex;
     gap: var(--space-4);
     justify-content: center;
-    flex-wrap: wrap;
-    margin-top: var(--space-6);
+    padding: var(--space-6) var(--space-12);
+    background: var(--color-carbon);
+    border-top: 1px solid var(--color-steel);
+    align-items: center;
+    min-height: 80px;
+}
+
+.button {
+    padding: var(--space-4) var(--space-8);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--duration) var(--ease);
+    border: 1px solid;
+    min-width: 120px;
+    text-align: center;
 }
 
 .cancelButton {
-    background: var(--color-gray-200);
-    color: var(--color-gray-700);
-    font-size: var(--text-lg);
-    font-weight: 500;
-    padding: var(--space-4) var(--space-6);
-    border: none;
-    border-radius: var(--radius-lg);
-    cursor: pointer;
-    transition: all var(--transition-base);
-    min-width: 120px;
+    background: transparent;
+    border-color: var(--color-steel);
+    color: var(--color-chrome);
 }
 
 .cancelButton:hover:not(:disabled) {
-    background: var(--color-gray-300);
+    background: var(--color-graphite);
+    border-color: var(--color-pewter);
+    color: var(--color-silver);
 }
 
 .clearButton {
-    background: var(--color-warning);
-    color: var(--color-white);
-    font-size: var(--text-lg);
-    font-weight: 500;
-    padding: var(--space-4) var(--space-6);
-    border: none;
-    border-radius: var(--radius-lg);
-    cursor: pointer;
-    transition: all var(--transition-base);
-    min-width: 120px;
+    background: transparent;
+    border-color: var(--color-amber);
+    color: var(--color-amber);
 }
 
 .clearButton:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--color-warning) 90%, black);
+    background: rgba(245, 158, 11, 0.1);
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
 }
 
 .submitButton {
-    background: var(--secondary-color);
-    color: var(--color-white);
-    font-size: var(--text-lg);
+    background: var(--color-arctic);
+    border-color: var(--color-arctic);
+    color: var(--color-void);
     font-weight: 600;
-    padding: var(--space-4) var(--space-10);
-    border: none;
-    border-radius: var(--radius-lg);
-    cursor: pointer;
-    transition: all var(--transition-base);
-    box-shadow: var(--shadow-md);
-    min-width: 180px;
+    min-width: 160px;
 }
 
 .submitButton:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--secondary-color) 90%, black);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-lg);
+    background: var(--color-ice);
+    border-color: var(--color-ice);
+    box-shadow: var(--shadow-glow);
 }
 
-.submitButton:disabled,
-.clearButton:disabled,
-.cancelButton:disabled {
-    opacity: 0.5;
+.button:disabled {
+    opacity: 0.3;
     cursor: not-allowed;
-    transform: none;
+}
+
+.error {
+    background: rgba(248, 81, 73, 0.1);
+    border: 1px solid rgba(248, 81, 73, 0.3);
+    color: #fca5a5;
+    padding: var(--space-4);
+    border-radius: var(--radius);
+    text-align: center;
+    font-size: 0.875rem;
+    margin: var(--space-4) 0;
 }
 
 /* Document Modal */
 .documentModal {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: var(--z-modal);
-    animation: fadeIn var(--transition-base);
-    padding: var(--space-4);
+    z-index: 1000;
+    padding: var(--space-8);
 }
 
 .documentModalContent {
-    background: var(--color-white);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-2xl);
-    width: 90%;
-    height: 90%;
-    max-width: 1000px;
+    width: 90vw;
+    height: 90vh;
+    max-width: 1200px;
     max-height: 800px;
+    background: var(--color-carbon);
+    border: 1px solid var(--color-steel);
+    border-radius: var(--radius-xl);
     display: flex;
     flex-direction: column;
-    animation: slideIn var(--transition-base);
+    overflow: hidden;
+    box-shadow: var(--shadow-float);
 }
 
 .documentModalHeader {
+    padding: var(--space-6) var(--space-8);
+    border-bottom: 1px solid var(--color-steel);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-4) var(--space-6);
-    border-bottom: 1px solid var(--color-gray-200);
+    background: var(--color-graphite);
+    flex-shrink: 0;
 }
 
 .documentModalHeader h3 {
-    font-size: var(--text-xl);
-    color: var(--primary-color);
-    margin: 0;
-}
-
-.closeDocumentButton {
-    background: var(--color-gray-200);
-    color: var(--color-gray-700);
-    border: none;
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-size: var(--text-base);
+    font-size: 0.875rem;
     font-weight: 500;
-    transition: all var(--transition-base);
+    color: var(--color-platinum);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
-.closeDocumentButton:hover {
-    background: var(--color-gray-300);
+.closeButton {
+    padding: var(--space-2) var(--space-4);
+    background: transparent;
+    border: 1px solid var(--color-steel);
+    border-radius: var(--radius);
+    color: var(--color-chrome);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all var(--duration) var(--ease);
+}
+
+.closeButton:hover {
+    background: var(--color-steel);
+    color: var(--color-silver);
 }
 
 .documentViewer {
     flex: 1;
     padding: var(--space-4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: var(--color-void);
+    min-height: 0;
 }
 
 .documentFrame {
     width: 100%;
     height: 100%;
     border: none;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
+    border-radius: var(--radius);
+    background: white;
 }
 
 .documentModalFooter {
-    padding: var(--space-4) var(--space-6);
-    border-top: 1px solid var(--color-gray-200);
+    padding: var(--space-6) var(--space-8);
+    border-top: 1px solid var(--color-steel);
+    background: var(--color-graphite);
     display: flex;
     justify-content: center;
+    flex-shrink: 0;
 }
 
 .continueButton {
-    background: var(--secondary-color);
-    color: var(--color-white);
-    font-size: var(--text-lg);
+    padding: var(--space-4) var(--space-8);
+    background: var(--color-arctic);
+    border: 1px solid var(--color-arctic);
+    border-radius: var(--radius);
+    color: var(--color-void);
+    font-size: 0.875rem;
     font-weight: 600;
-    padding: var(--space-3) var(--space-8);
-    border: none;
-    border-radius: var(--radius-lg);
     cursor: pointer;
-    transition: all var(--transition-base);
-    box-shadow: var(--shadow-md);
+    transition: all var(--duration) var(--ease);
+    min-width: 160px;
 }
 
 .continueButton:hover {
-    background: color-mix(in srgb, var(--secondary-color) 90%, black);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-lg);
+    background: var(--color-ice);
+    border-color: var(--color-ice);
+    box-shadow: var(--shadow-glow);
 }
 
 /* Confirmation Dialog */
 .dialogOverlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: var(--z-modal);
-    animation: fadeIn var(--transition-fast);
+    z-index: 1000;
+    padding: var(--space-8);
 }
 
 .dialog {
-    background: var(--color-white);
-    padding: var(--space-8);
+    background: var(--color-carbon);
+    border: 1px solid var(--color-steel);
     border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-2xl);
-    max-width: 500px;
-    width: 90%;
+    padding: var(--space-12);
+    max-width: 480px;
+    width: 100%;
     text-align: center;
-    animation: slideIn var(--transition-base);
+    box-shadow: var(--shadow-float);
 }
 
 .dialog h3 {
-    font-size: var(--text-xl);
-    color: var(--primary-color);
-    margin-bottom: var(--space-4);
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-platinum);
+    margin-bottom: var(--space-6);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.875rem;
 }
 
 .dialog p {
-    color: var(--color-gray-600);
-    margin-bottom: var(--space-3);
+    color: var(--color-silver);
+    margin-bottom: var(--space-4);
     line-height: 1.5;
+    font-size: 0.875rem;
 }
 
 .dialogNote {
-    font-size: var(--text-sm);
-    color: var(--color-gray-500);
-    font-style: italic;
-    margin-bottom: var(--space-6) !important;
+    font-size: 0.75rem;
+    color: var(--color-chrome);
+    margin-bottom: var(--space-8) !important;
+    padding: var(--space-3);
+    background: rgba(88, 166, 255, 0.05);
+    border: 1px solid rgba(88, 166, 255, 0.1);
+    border-radius: var(--radius);
 }
 
 .dialogActions {
@@ -392,91 +439,106 @@
 }
 
 .dialogCancelButton {
-    background: var(--color-gray-200);
-    color: var(--color-gray-700);
-    font-weight: 500;
     padding: var(--space-3) var(--space-6);
-    border: none;
-    border-radius: var(--radius-md);
+    background: transparent;
+    border: 1px solid var(--color-steel);
+    border-radius: var(--radius);
+    color: var(--color-chrome);
+    font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: all var(--duration) var(--ease);
 }
 
 .dialogCancelButton:hover:not(:disabled) {
-    background: var(--color-gray-300);
+    background: var(--color-graphite);
+    color: var(--color-silver);
 }
 
 .dialogConfirmButton {
-    background: var(--secondary-color);
-    color: var(--color-white);
-    font-weight: 600;
     padding: var(--space-3) var(--space-6);
-    border: none;
-    border-radius: var(--radius-md);
+    background: var(--color-arctic);
+    border: 1px solid var(--color-arctic);
+    border-radius: var(--radius);
+    color: var(--color-void);
+    font-size: 0.875rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-base);
+    transition: all var(--duration) var(--ease);
 }
 
 .dialogConfirmButton:hover:not(:disabled) {
-    background: color-mix(in srgb, var(--secondary-color) 90%, black);
+    background: var(--color-ice);
+    border-color: var(--color-ice);
+    box-shadow: var(--shadow-glow);
 }
 
 .dialogCancelButton:disabled,
 .dialogConfirmButton:disabled {
-    opacity: 0.5;
+    opacity: 0.3;
     cursor: not-allowed;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-    .header {
-        flex-direction: column;
-        gap: var(--space-4);
-        text-align: center;
-        min-height: auto;
+/* Responsive Tablet Landscape */
+@media (max-width: 1024px) and (orientation: landscape) {
+    .content {
+        grid-template-columns: 280px 1fr;
     }
 
-    .content {
-        padding: var(--space-4);
-        gap: var(--space-4);
+    .documentPanel,
+    .signaturePanel {
+        padding: var(--space-6);
     }
 
     .actions {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .actions button {
-        width: 100%;
-        max-width: 300px;
-    }
-
-    .documentModal {
-        padding: var(--space-2);
-    }
-
-    .documentModalContent {
-        width: 95%;
-        height: 95%;
-    }
-
-    .dialogActions {
-        flex-direction: column;
-    }
-
-    .dialogActions button {
-        width: 100%;
+        padding: var(--space-4) var(--space-8);
+        min-height: 70px;
     }
 }
 
-/* Animation for slide in */
-@keyframes slideIn {
-    from {
-        transform: translateY(-20px);
-        opacity: 0;
+@media (max-height: 600px) {
+    .documentPanel,
+    .signaturePanel {
+        padding: var(--space-4);
     }
-    to {
-        transform: translateY(0);
-        opacity: 1;
+
+    .actions {
+        padding: var(--space-3) var(--space-6);
+        min-height: 60px;
     }
+
+    .canvasContainer {
+        min-height: 200px;
+    }
+
+    .button {
+        padding: var(--space-3) var(--space-6);
+        font-size: 0.8125rem;
+    }
+}
+
+/* Focus States */
+*:focus-visible {
+    outline: 2px solid var(--color-arctic);
+    outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+    background: rgba(88, 166, 255, 0.3);
+    color: var(--color-platinum);
+}
+
+/* Loading Animation */
+.viewDocumentButton:disabled::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(88, 166, 255, 0.1), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
 }

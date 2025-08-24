@@ -1,4 +1,4 @@
-// src/components/IdleScreen/IdleScreen.tsx
+// src/components/IdleScreen/IdleScreen.tsx - Ultra-Luxury Version
 import { useEffect, useState } from 'react';
 import styles from './IdleScreen.module.css';
 import { useDevice } from '../../contexts/DeviceContext';
@@ -53,16 +53,18 @@ export default function IdleScreen({ isInstallable, onInstall }: IdleScreenProps
                     Gotowy do przyjęcia podpisu
                 </p>
 
-                <div className={styles.deviceInfo}>
-                    {deviceConfig?.friendlyName}
-                </div>
+                {deviceConfig?.friendlyName && (
+                    <div className={styles.deviceInfo}>
+                        {deviceConfig.friendlyName}
+                    </div>
+                )}
             </div>
 
             {isInstallable && (
                 <div className={styles.installPrompt}>
-                    <p>Zainstaluj aplikację dla lepszego doświadczenia</p>
+                    <p>Zainstaluj aplikację</p>
                     <button onClick={handleInstall} className={styles.installButton}>
-                        Zainstaluj
+                        Instaluj
                     </button>
                 </div>
             )}
