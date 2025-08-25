@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent none
 
     environment {
         IMAGE_NAME = '172.17.0.1:5000/signature-pad-pwa'
