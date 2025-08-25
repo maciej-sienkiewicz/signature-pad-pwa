@@ -3,7 +3,7 @@ services:
     image: ${ENV_DETAILING_CRM_FRONTEND_SIGNATURE_PAD_PWA_IMAGE}
     container_name: ${SIGNATURE_PAD_PWA_CONTAINER_NAME}
     ports:
-      - '81:80'
+      - '${ENV_DETAILING_CRM_FRONTEND_SIGNATURE_PAD_PWA_EXTERNAL_PORT}:80'
 
     restart: always
     networks:
