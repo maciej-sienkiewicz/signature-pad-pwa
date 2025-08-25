@@ -7,9 +7,10 @@ services:
 
     restart: always
     networks:
-      - ${ENV_NETWORK}
+      - network
 
 
 networks:
-  ${ENV_NETWORK}:
+  network:
+    name: ${ENV_NETWORK}
     external: true
