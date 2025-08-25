@@ -1,6 +1,6 @@
 services:
   detailing-crm-signature-pad-pwa-develop:
-    image: ${ENV_DETAILING_CRM_FRONTEND_IMAGE}
+    image: ${ENV_DETAILING_CRM_FRONTEND_SIGNATURE_PAD_PWA_IMAGE}
     ports:
       - '80:80'
 
