@@ -1,0 +1,14 @@
+services:
+  detailing-crm-signature-pad-pwa-develop:
+    image: ${ENV_DETAILING_CRM_FRONTEND_IMAGE}
+    ports:
+      - '80:80'
+
+    restart: always
+    networks:
+      - ${ENV_NETWORK}
+
+
+networks:
+  ${ENV_NETWORK}:
+    external: true
