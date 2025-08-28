@@ -45,7 +45,7 @@ export class TabletWebSocketHandler {
         this.setConnectionStatus('connecting');
 
         try {
-            const wsUrl = `${ENV.WS_BASE_URL}/ws/tablet/${this.deviceConfig.deviceId}`;
+            const wsUrl = `/ws/tablet/${this.deviceConfig.deviceId}`;
             console.log('WebSocket connection attempt:', wsUrl);
 
             this.ws = new WebSocket(wsUrl);
