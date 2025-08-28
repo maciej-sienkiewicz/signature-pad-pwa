@@ -5,9 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d227f5a3-a1ac-45f8-8f22-37fb7b96b75c" name="Changes" comment="podglad dokumentu">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/api/websocket.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/websocket.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/config/environment.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/config/environment.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/services/TabletWebSocketHandler.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -116,7 +114,7 @@
       <workItem from="1755879032686" duration="6376000" />
       <workItem from="1755981418425" duration="4004000" />
       <workItem from="1756074355480" duration="489000" />
-      <workItem from="1756332271905" duration="2156000" />
+      <workItem from="1756332271905" duration="2868000" />
     </task>
     <task id="LOCAL-00001" summary="init">
       <option name="closed" value="true" />
