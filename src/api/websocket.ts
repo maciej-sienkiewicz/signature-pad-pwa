@@ -44,7 +44,7 @@ export class WebSocketClient {
 
         try {
             // Build WebSocket URL - używamy deviceId bezpośrednio
-            const wsUrl = `${ENV.WS_BASE_URL}/ws/tablet/${this.deviceConfig.deviceId}`;
+            const wsUrl = `/ws/tablet/${this.deviceConfig.deviceId}`;
 
             console.log('WebSocket handshake attempt:', wsUrl);
 
@@ -65,7 +65,7 @@ export class WebSocketClient {
     }
 
     private handleOpen(): void {
-        console.log('WebSocket handshake successful:', `${ENV.WS_BASE_URL}/ws/tablet/${this.deviceConfig?.deviceId}`);
+        console.log('WebSocket handshake successful:', `/ws/tablet/${this.deviceConfig?.deviceId}`);
         this.reconnectAttempts = 0;
         this.setConnectionStatus('connected');
 
