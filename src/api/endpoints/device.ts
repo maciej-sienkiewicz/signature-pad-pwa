@@ -1,7 +1,6 @@
 // src/api/endpoints/device.ts
 import { apiClient } from '../client';
 import { ApiResponse } from '../../types/api.types';
-import { DeviceConfig, TenantBranding } from '../../types/device.types';
 
 // Updated request interfaces to match new backend API
 export interface TabletPairingRequest {
@@ -29,13 +28,6 @@ export class DeviceAPI {
         return apiClient.post<TabletCredentials>('/tablets/pair', request);
     }
 
-    /**
-     * Get company branding information
-     * Updated to use companyId instead of tenantId
-     */
-    static async getCompanyBranding(companyId: number): Promise<ApiResponse<TenantBranding>> {
-        return apiClient.get<TenantBranding>(`/companies/${companyId}/branding`);
-    }
 
     /**
      * Update tablet status (heartbeat)
@@ -48,12 +40,6 @@ export class DeviceAPI {
         return apiClient.post<void>(`/tablets/${deviceId}/status`, status);
     }
 
-    /**
-     * Get tablet information
-     */
-    static async getTabletInfo(deviceId: string): Promise<ApiResponse<DeviceConfig>> {
-        return apiClient.get<DeviceConfig>(`/tablets/${deviceId}`);
-    }
 
     /**
      * Test endpoint for development - generates pairing code

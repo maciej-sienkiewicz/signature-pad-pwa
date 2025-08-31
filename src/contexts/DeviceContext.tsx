@@ -1,7 +1,6 @@
 // src/contexts/DeviceContext.tsx
 import { createContext, useContext, useState, useEffect } from 'react';
 import { StorageService } from '../services/storage.service';
-import { DeviceAPI } from '../api/endpoints/device';
 import { wsClient } from '../api/websocket';
 import { DeviceConfig, DeviceStatus, TenantBranding } from "../types/device.types";
 
@@ -184,11 +183,6 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
             storage.saveDeviceConfig(config);
             setDeviceConfig(config);
 
-            // Fetch company branding if companyId is available
-            if (config.companyId) {
-                await fetchCompanyBranding(config.companyId);
-            }
-
             // Connect WebSocket
             wsClient.connect(config);
 
@@ -200,35 +194,6 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
             console.error('Error during device pairing:', error);
             setDeviceStatus(DeviceStatus.ERROR);
             throw error;
-        }
-    };
-
-    const fetchCompanyBranding = async (companyId: number): Promise<void> => {
-        try {
-            const brandingResponse = await DeviceAPI.getCompanyBranding(companyId);
-
-            if (brandingResponse.success && brandingResponse.data) {
-                const branding = brandingResponse.data;
-
-                storage.saveTenantBranding(branding);
-                setTenantBranding(branding);
-                applyBrandingToCSS(branding);
-
-                console.log('Company branding loaded successfully');
-            } else {
-                console.warn('Could not load company branding:', brandingResponse.error);
-                // Use default branding
-                const defaultBranding: TenantBranding = {
-                    primaryColor: '#1a1a1a',
-                    secondaryColor: '#0066ff',
-                    logoUrl: '',
-                    companyName: 'CRM System'
-                };
-                setTenantBranding(defaultBranding);
-                applyBrandingToCSS(defaultBranding);
-            }
-        } catch (error) {
-            console.error('Error fetching company branding:', error);
         }
     };
 
