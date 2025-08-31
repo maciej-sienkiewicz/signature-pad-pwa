@@ -131,11 +131,6 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
                 if (savedConfig) {
                     setDeviceConfig(savedConfig);
                     setDeviceStatus(DeviceStatus.PAIRED);
-
-                    // Validate device configuration with server
-                    if (isOnline) {
-                        await validateDeviceConfig(savedConfig);
-                    }
                 }
 
                 if (savedBranding) {
@@ -180,32 +175,6 @@ export function DeviceProvider({ children }: { children: React.ReactNode }) {
             unsubscribeAuthFailed();
         };
     }, [deviceConfig]);
-
-    const validateDeviceConfig = async (config: DeviceConfig): Promise<boolean> => {
-        try {
-            const response = await DeviceAPI.getTabletInfo(config.deviceId);
-
-            if (response.success && response.data) {
-                // Update config with latest info from server
-                const updatedConfig = { ...config, ...response.data };
-                if (JSON.stringify(updatedConfig) !== JSON.stringify(config)) {
-                    storage.saveDeviceConfig(updatedConfig);
-                    setDeviceConfig(updatedConfig);
-                }
-                return true;
-            } else {
-                console.warn('Device validation failed:', response.error);
-                if (response.error?.code === 'UNAUTHORIZED') {
-                    // Device token is invalid, require re-pairing
-                    unpairDevice();
-                }
-                return false;
-            }
-        } catch (error) {
-            console.error('Error validating device config:', error);
-            return false;
-        }
-    };
 
     const pairDevice = async (config: DeviceConfig): Promise<void> => {
         try {
