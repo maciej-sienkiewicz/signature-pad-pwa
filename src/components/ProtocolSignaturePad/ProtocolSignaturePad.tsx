@@ -69,10 +69,6 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
                 setDocumentUrl(url);
                 setDocumentLoaded(true);
 
-                if (deviceConfig) {
-                    ProtocolSignatureAPI.acknowledgeDocumentViewing(request.sessionId, 'DOCUMENT_LOADED');
-                }
-
             } catch (conversionError) {
                 setError('Błąd podczas przetwarzania dokumentu');
             }
@@ -85,9 +81,6 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
     const handleViewDocument = () => {
         if (documentUrl && documentLoaded) {
             setShowDocument(true);
-            if (deviceConfig) {
-                ProtocolSignatureAPI.acknowledgeDocumentViewing(request.sessionId, 'DOCUMENT_OPENED');
-            }
         } else {
             setError('Dokument nie jest jeszcze gotowy do wyświetlenia');
         }
@@ -95,9 +88,6 @@ export default function ProtocolSignaturePad({ request, onComplete, onCancel }: 
 
     const handleDocumentViewed = () => {
         setShowDocument(false);
-        if (deviceConfig) {
-            ProtocolSignatureAPI.acknowledgeDocumentViewing(request.sessionId, 'DOCUMENT_VIEWED');
-        }
     };
 
     const handleSubmit = async () => {
